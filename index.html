@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Visibility Unleashed Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F1F6; --surface:#FFFFFF; --ink:#1E1A2B; --muted:#6B6580; --line:#DDDAE6;
+  --emerald:#1D6A56; --emerald-soft:#E3F0EB; --gold:#A9822F; --gold-soft:#F4ECD9;
+  --display:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --ui:"Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#16131F; --surface:#1F1B2B; --ink:#EEEAF6; --muted:#A49DB8; --line:#332D44;
+    --emerald:#5CC3A4; --emerald-soft:#1D3A33; --gold:#D8B461; --gold-soft:#3A301A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16131F; --surface:#1F1B2B; --ink:#EEEAF6; --muted:#A49DB8; --line:#332D44;
+  --emerald:#5CC3A4; --emerald-soft:#1D3A33; --gold:#D8B461; --gold-soft:#3A301A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:16px;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding:28px 20px 80px}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--emerald);outline-offset:2px}
+
+h1{font-family:var(--display);font-weight:600;font-size:clamp(2.2rem,7vw,3.4rem);line-height:1;margin:0}
+.sub{color:var(--muted);margin-top:8px;max-width:52ch}
+.sync{font-size:.8rem;color:var(--muted);margin-top:8px}
+
+.days{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;margin:26px 0 8px}
+.dot{aspect-ratio:1;border-radius:50%;border:1.5px solid var(--line);background:transparent;font-size:.78rem;color:var(--muted);display:grid;place-items:center;padding:0;transition:background .2s,border-color .2s}
+.dot.planned{border-color:var(--gold);color:var(--ink);background:var(--gold-soft)}
+.dot.done{background:var(--gold);border-color:var(--gold);color:var(--surface);font-weight:600}
+.dot.today{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--emerald)}
+.dot.sel{border-width:3px;border-color:var(--ink)}
+.legend{font-size:.8rem;color:var(--muted)}
+
+.progress{display:flex;gap:12px;flex-wrap:wrap;margin:22px 0 30px}
+.pill{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex:1 1 220px}
+.pill .n{font-family:var(--display);font-size:2rem;font-weight:600;line-height:1}
+.pill .l{font-size:.85rem;color:var(--muted);line-height:1.3}
+.pill.convo{border-color:var(--emerald);background:var(--emerald-soft)}
+.pill .ctr{display:flex;align-items:center;gap:10px}
+.pill .ctr button{width:30px;height:30px;border-radius:50%;border:1px solid var(--emerald);background:var(--surface);line-height:1}
+
+.dayhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead h2{font-family:var(--display);font-size:2.2rem;font-weight:600;margin:0;line-height:1}
+.dayhead .date{color:var(--muted);font-size:.95rem;margin-top:4px}
+.nav{display:flex;gap:6px}
+.nav button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:1.2rem}
+.nav button:disabled{opacity:.35;cursor:default}
+
+label.f,.f{display:block;font-weight:600;font-size:.9rem;margin:0 0 6px}
+.hint{font-weight:400;color:var(--muted);font-size:.82rem}
+input[type=text],input[type=url],textarea{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px}
+textarea{resize:vertical;line-height:1.55}
+.block{margin-bottom:22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 13px;font-size:.9rem}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.ch{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:16px}
+.ch-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.ch-head h3{margin:0;font-size:1.1rem;font-weight:600}
+.field{margin-bottom:14px}
+.field-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.copy{border:none;background:none;color:var(--emerald);font-size:.85rem;font-weight:600;padding:2px 4px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:.9rem;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--emerald)}
+.btn.main{background:var(--emerald);border-color:var(--emerald);color:var(--surface);font-weight:600}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.row2{grid-template-columns:1fr}}
+
+.media{border:1.5px dashed var(--line);border-radius:12px;padding:14px}
+.media-empty{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.media-prev{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.media-prev img,.media-prev video{max-width:180px;max-height:220px;border-radius:10px;background:var(--bg)}
+.media-actions{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.media .note{font-size:.8rem;color:var(--muted);margin-top:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+.done-bar{margin-top:28px;text-align:center}
+.done-btn{width:100%;border:none;border-radius:14px;padding:18px;background:var(--gold);color:var(--surface);font-family:var(--display);font-size:1.6rem;font-weight:600}
+.done-btn.is-done{background:transparent;color:var(--gold);border:2px solid var(--gold)}
+.done-bar .undo{margin-top:8px;font-size:.85rem;color:var(--muted);background:none;border:none;text-decoration:underline}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Visibility Unleashed</h1>
+    <div class="sub" id="subline">Plan your posts ahead. When it's time, come back here, copy, paste and post.</div>
+    <div class="sync" id="sync">Your plan saves on this device.</div>
+  </header>
+
+  <nav class="days" id="days" aria-label="Challenge days"></nav>
+  <div class="legend">Gold ring: planned. Solid gold: done. Tap any day to open it.</div>
+
+  <section class="progress">
+    <div class="pill"><div class="n" id="doneN">0/30</div><div class="l">Days done</div></div>
+    <div class="pill convo">
+      <div class="ctr">
+        <button type="button" id="convMinus" aria-label="Remove one">−</button>
+        <div class="n" id="convN">0</div>
+        <button type="button" id="convPlus" aria-label="Add one">+</button>
+      </div>
+      <div class="l">Conversations started from my posts</div>
+    </div>
+  </section>
+
+  <main id="editor"></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+const START = "2026-10-01", DAYS = 30, LS_KEY = "visibility-unleashed-v2";
+const CHANNELS = {
+  ig:{label:"Instagram & Facebook", fields:[]},
+  video:{label:"YouTube", fields:[{k:"title",label:"Video title",rows:1},{k:"caption",label:"Description",rows:6}]},
+  email:{label:"Email", fields:[{k:"title",label:"Subject line",rows:1},{k:"caption",label:"Email",rows:9}]},
+  stories:{label:"Stories", fields:[{k:"caption",label:"Story text",rows:4}]}
+};
+
+let state = loadLocal() || {days:{}, conversations:0, updatedAt:0};
+if(!state.weeks) state.weeks={};
+function weekOf(n){ return Math.ceil(n/7); }
+function weekRange(w){ const a=(w-1)*7+1, b=Math.min(w*7,DAYS); return `Days ${a} to ${b}`; }
+let current = todayIndex() || 1;
+let db=null, uid=null, dbWritable=false, downloads=null;
+const dirty = new Set(); let saveTimer=null;
+
+function loadLocal(){ try{ const r=localStorage.getItem(LS_KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+function getDay(n){ if(!state.days[n]) state.days[n]={active:["ig"],channels:{},done:false,updatedAt:0}; const d=state.days[n]; d.active=(d.active||[]).filter(k=>CHANNELS[k]); return d; }
+function getCh(d,k){ if(!d.channels[k]) d.channels[k]={title:"",caption:"",cta:"",link:"",fileName:""}; const c=d.channels[k]; if(k==="ig"){ if(!c.format) c.format="reel"; if(!Array.isArray(c.slides)) c.slides=["",""]; if(c.hook==null) c.hook=""; } return c; }
+const IG_FORMATS = {
+  reel:{label:"Reel", media:"Video", accept:"video/*", multiple:false},
+  post:{label:"Single post", media:"Image", accept:"image/*", multiple:false},
+  carousel:{label:"Carousel", media:"Images, in slide order", accept:"image/*,video/*", multiple:true}
+};
+function dateFor(n){ const d=new Date(START+"T00:00:00"); d.setDate(d.getDate()+n-1); return d; }
+function todayIndex(){ const s=new Date(START+"T00:00:00"), t=new Date(); t.setHours(0,0,0,0); const n=Math.round((t-s)/86400000)+1; return (n>=1&&n<=DAYS)?n:null; }
+function longDate(n){ return dateFor(n).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"}); }
+function planned(n){ const d=state.days[n]; if(!d) return false; return (d.active||[]).some(k=>{ const c=d.channels[k]; return c&&(c.caption||c.title||c.hook||c.cta||c.link||c.fileName||(c.slides||[]).some(x=>x)); }); }
+function touch(k){
+  if(k==="meta"){ state.updatedAt=Date.now(); } else getDay(k).updatedAt=Date.now();
+  dirty.add(k); saveLocal(); clearTimeout(saveTimer); saveTimer=setTimeout(flush,900);
+}
+
+/* helpers */
+const $=id=>document.getElementById(id);
+function el(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs) for(const [k,v] of Object.entries(attrs)){
+    if(k==="class") e.className=v; else if(k==="text") e.textContent=v;
+    else if(k.startsWith("on")) e.addEventListener(k.slice(2),v);
+    else if(v!==false&&v!=null) e.setAttribute(k,v===true?"":v);
+  }
+  (kids||[]).forEach(c=>c&&e.appendChild(typeof c==="string"?document.createTextNode(c):c));
+  return e;
+}
+let toastT; function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1700); }
+function copyText(text){
+  if(!text.trim()){ toast("Nothing to copy yet"); return; }
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(()=>toast("Copied"),()=>fallback(text));
+  else fallback(text);
+}
+function fallback(text){ const ta=el("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");toast("Copied");}catch(e){toast("Select the text and copy it by hand");} ta.remove(); }
+function fullPost(ch){ return [ch.caption, [ch.cta, ch.link].filter(x=>x&&x.trim()).join(" ")].filter(x=>x&&x.trim()).join("\n\n"); }
+
+/* files stored on this device (IndexedDB) */
+let idbP=null;
+function idb(){ if(idbP) return idbP; idbP=new Promise((res,rej)=>{ try{ const r=indexedDB.open("vu-media",1); r.onupgradeneeded=()=>r.result.createObjectStore("files"); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);}catch(e){rej(e);} }); return idbP; }
+async function fileGet(key){ try{ const d=await idb(); return await new Promise(r=>{ const q=d.transaction("files").objectStore("files").get(key); q.onsuccess=()=>r(q.result||null); q.onerror=()=>r(null); }); }catch(e){ return null; } }
+async function filePut(key,val){ const d=await idb(); return new Promise((res,rej)=>{ const tx=d.transaction("files","readwrite"); tx.objectStore("files").put(val,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+async function fileDel(key){ try{ const d=await idb(); await new Promise(res=>{ const tx=d.transaction("files","readwrite"); tx.objectStore("files").delete(key); tx.oncomplete=res; tx.onerror=res; }); }catch(e){} }
+
+/* render */
+function renderDots(){
+  const box=$("days"); box.innerHTML=""; const t=todayIndex();
+  for(let n=1;n<=DAYS;n++){
+    const d=state.days[n]; const cls=d&&d.done?"done":planned(n)?"planned":"";
+    box.appendChild(el("button",{type:"button",class:`dot ${cls} ${n===t?"today":""} ${n===current?"sel":""}`,
+      "aria-label":`Day ${n}${cls==="done"?", done":cls==="planned"?", planned":""}`,"aria-current":n===current?"true":false,
+      text:String(n),onclick:()=>{current=n;renderAll();window.scrollTo({top:$("editor").offsetTop-20,behavior:"smooth"});}}));
+  }
+}
+function renderProgress(){
+  let done=0; for(let n=1;n<=DAYS;n++) if(state.days[n]&&state.days[n].done) done++;
+  $("doneN").textContent=`${done}/${DAYS}`; $("convN").textContent=state.conversations||0;
+  const t=todayIndex();
+  $("subline").textContent = t ? `Today is Day ${t}. Plan ahead, then come back here to copy, paste and post.`
+    : `Starts ${longDate(1)}. Plan your posts ahead, then come back here each day to copy, paste and post.`;
+}
+
+function textField(id,label,value,rows,onInput,placeholder){
+  const inp = rows>1 ? el("textarea",{id,rows,placeholder:placeholder||""}) : el("input",{id,type:"text",placeholder:placeholder||""});
+  inp.value=value||""; inp.addEventListener("input",()=>onInput(inp.value));
+  return el("div",{class:"field"},[
+    el("div",{class:"field-top"},[el("label",{class:"f",for:id,text:label}), el("button",{type:"button",class:"copy",text:"Copy",onclick:()=>copyText(inp.value)})]),
+    inp
+  ]);
+}
+
+async function getFiles(key){ const r=await fileGet(key); if(!r) return []; return Array.isArray(r)?r:[r]; }
+function mediaBox(n,k,ch,opt){
+  opt=opt||{label:"Image or video",accept:"image/*,video/*",multiple:false};
+  const key=`${n}-${k}`, box=el("div",{class:"media"}), inputId=`file-${key}`, nameId=`fname-${key}`;
+  const nameInp=el("input",{id:nameId,type:"text",placeholder:opt.multiple?"e.g. Canva pages 4 to 8":"e.g. day1-reel.mp4 or Canva page 3"});
+  nameInp.value=ch.fileName||"";
+  nameInp.addEventListener("input",()=>{ ch.fileName=nameInp.value; touch(n); renderDots(); });
+  const fileInp=el("input",{type:"file",id:inputId,accept:opt.accept,multiple:opt.multiple,class:"sr"});
+  fileInp.addEventListener("change", async ()=>{
+    const picked=[...(fileInp.files||[])]; fileInp.value=""; if(!picked.length) return;
+    const recs=picked.map(f=>({blob:f,name:f.name,type:f.type}));
+    const list = opt.multiple ? (await getFiles(key)).concat(recs) : recs.slice(0,1);
+    try{
+      await filePut(key,list);
+      if(!nameInp.value){ nameInp.value=list.map(r=>r.name).join(", "); ch.fileName=nameInp.value; }
+      touch(n); renderDots(); draw(); toast("Attached");
+    }catch(e){ toast("That file is too big for this device. Write its name below instead."); }
+  });
+  const area=el("div");
+  async function draw(){
+    area.innerHTML=""; const list=await getFiles(key);
+    if(!list.length){
+      area.appendChild(el("div",{class:"media-empty"},[
+        el("label",{class:"btn",for:inputId,text:opt.multiple?"Attach images":"Attach "+opt.label.toLowerCase()}),
+        el("span",{class:"hint",text:"Or just write the file name below."})
+      ])); return;
+    }
+    list.forEach((rec,i)=>{
+      const url=URL.createObjectURL(rec.blob);
+      const prev=(rec.type||"").startsWith("video")?el("video",{src:url,controls:true,playsinline:true}):el("img",{src:url,alt:rec.name});
+      area.appendChild(el("div",{class:"media-prev",style:"margin-bottom:12px"},[prev, el("div",{class:"media-actions"},[
+        el("span",{class:"hint",text:(opt.multiple?`Slide ${i+1}: `:"")+rec.name}),
+        downloads?el("button",{type:"button",class:"btn main",text:"Save to my phone or computer",onclick:async()=>{
+          try{ await downloads.save({filename:rec.name,data:rec.blob}); }catch(e){ if(e&&e.code!=="declined") toast("Couldn't save here. Press and hold the preview to save it."); }
+        }}):el("span",{class:"hint",text:"Press and hold the preview to save it."}),
+        el("button",{type:"button",class:"copy",text:"Remove",onclick:async()=>{ const l=await getFiles(key); l.splice(i,1); if(l.length) await filePut(key,l); else await fileDel(key); draw(); }})
+      ])]));
+    });
+    area.appendChild(el("label",{class:"btn",for:inputId,text:opt.multiple?"Add more images":"Replace"}));
+  }
+  draw();
+  box.append(el("div",{class:"f",text:opt.label}), fileInp, area,
+    el("div",{class:"field",style:"margin:12px 0 0"},[el("label",{class:"f",for:nameId,text:opt.multiple?"File names":"File name"}), nameInp]),
+    el("div",{class:"note",text:"Attached files stay on the device you attached them from."}));
+  return box;
+}
+
+function slidesBlock(n,ch){
+  const wrap=el("div",{class:"field"});
+  function draw(){
+    wrap.innerHTML="";
+    wrap.appendChild(el("div",{class:"f",text:"Slides"},[el("span",{class:"hint",text:"  The words on each slide. Slide 1 is the hook."})]));
+    ch.slides.forEach((txt,i)=>{
+      const id=`d${n}-slide-${i}`;
+      const ta=el("textarea",{id,rows:2,placeholder:i===0?"The hook that stops the scroll":"What this slide says"}); ta.value=txt;
+      ta.addEventListener("input",()=>{ ch.slides[i]=ta.value; touch(n); renderDots(); });
+      wrap.appendChild(el("div",{style:"margin-bottom:10px"},[
+        el("div",{class:"field-top"},[el("label",{class:"f",for:id,text:`Slide ${i+1}`}), el("span",{},[
+          el("button",{type:"button",class:"copy",text:"Copy",onclick:()=>copyText(ta.value)}),
+          ch.slides.length>1?el("button",{type:"button",class:"copy",text:"Remove",onclick:()=>{ ch.slides.splice(i,1); touch(n); draw(); }}):null
+        ])]), ta]));
+    });
+    if(ch.slides.length<20) wrap.appendChild(el("button",{type:"button",class:"btn",text:"Add a slide",onclick:()=>{ ch.slides.push(""); touch(n); draw(); }}));
+  }
+  draw(); return wrap;
+}
+
+function renderChannel(n,d,k){
+  const def=CHANNELS[k], ch=getCh(d,k);
+  const sec=el("section",{class:"ch","aria-label":def.label});
+  sec.appendChild(el("div",{class:"ch-head"},[
+    el("h3",{text:def.label}),
+    el("button",{type:"button",class:"btn main",text:"Copy post",onclick:()=>copyText((ch.title&&k!=="ig"?ch.title+"\n\n":"")+fullPost(ch))})
+  ]));
+  let mediaOpt=null;
+  if(k==="ig"){
+    const fmts=el("div",{class:"chips",role:"group","aria-label":"Type of Instagram post",style:"margin-bottom:16px"});
+    Object.entries(IG_FORMATS).forEach(([fk,fd])=>fmts.appendChild(el("button",{type:"button",class:"chip","aria-pressed":String(ch.format===fk),text:fd.label,onclick:()=>{ ch.format=fk; touch(n); renderEditor(); }})));
+    sec.appendChild(el("div",{},[el("div",{class:"f",text:"What kind of post is it?"}),fmts]));
+    const fd=IG_FORMATS[ch.format];
+    if(ch.format==="reel") sec.appendChild(textField(`d${n}-ig-hook`,"Hook (the words on screen in the first 3 seconds)",ch.hook,2,v=>{ch.hook=v;touch(n);renderDots();},"The line that stops the scroll"));
+    if(ch.format==="carousel") sec.appendChild(slidesBlock(n,ch));
+    sec.appendChild(textField(`d${n}-ig-caption`,"Caption",ch.caption,7,v=>{ch.caption=v;touch(n);renderDots();},"Paste the caption your Wealthy CEO self gave you"));
+    mediaOpt={label:fd.media,accept:fd.accept,multiple:fd.multiple};
+  }
+  def.fields.forEach(f=>sec.appendChild(textField(`d${n}-${k}-${f.k}`,f.label,ch[f.k],f.rows,v=>{ ch[f.k]=v; touch(n); renderDots(); },
+    f.k==="caption"?"Paste the caption your Wealthy CEO self gave you":"")));
+  sec.appendChild(el("div",{class:"row2"},[
+    textField(`d${n}-${k}-cta`,"Call to action",ch.cta,2,v=>{ch.cta=v;touch(n);renderDots();},"e.g. Comment WEALTH and I'll send it to you"),
+    textField(`d${n}-${k}-link`,"Link",ch.link,1,v=>{ch.link=v;touch(n);renderDots();},"https://")
+  ]));
+  sec.appendChild(mediaBox(n,k,ch,mediaOpt||(k==="video"?{label:"Video",accept:"video/*",multiple:false}:null)));
+  return sec;
+}
+
+function renderEditor(){
+  const n=current, d=getDay(n), box=$("editor"); box.innerHTML="";
+  box.appendChild(el("div",{class:"dayhead"},[
+    el("div",{},[el("h2",{text:`Day ${n}`}),el("div",{class:"date",text:longDate(n)})]),
+    el("div",{class:"nav"},[
+      el("button",{type:"button","aria-label":"Previous day",text:"‹",disabled:n<=1,onclick:()=>{current--;renderAll();}}),
+      el("button",{type:"button","aria-label":"Next day",text:"›",disabled:n>=DAYS,onclick:()=>{current++;renderAll();}})
+    ])
+  ]));
+  const w=weekOf(n), cvId=`canva-${w}`;
+  const cv=el("input",{id:cvId,type:"url",placeholder:"Paste your Canva design link for this week"}); cv.value=state.weeks[w]||"";
+  const open=el("a",{class:"btn main",target:"_blank",rel:"noopener",text:"Open in Canva"});
+  const syncOpen=()=>{ const v=cv.value.trim(); if(/^https?:\/\//i.test(v)){ open.href=v; open.hidden=false; } else open.hidden=true; };
+  syncOpen();
+  cv.addEventListener("input",()=>{ state.weeks[w]=cv.value.trim(); syncOpen(); touch("meta"); });
+  box.appendChild(el("div",{class:"block ch",style:"margin-top:0"},[
+    el("label",{class:"f",for:cvId,text:`Week ${w} Canva design`},[el("span",{class:"hint",text:`  ${weekRange(w)}. One design holds the whole week. Download from there when it's time to post.`})]),
+    el("div",{style:"display:flex;gap:8px;align-items:center"},[cv,open])
+  ]));
+
+  const chips=el("div",{class:"chips",role:"group","aria-label":"Where I'm posting"});
+  Object.entries(CHANNELS).forEach(([k,def])=>{
+    const on=d.active.includes(k);
+    chips.appendChild(el("button",{type:"button",class:"chip","aria-pressed":String(on),text:def.label,onclick:()=>{
+      d.active = on ? d.active.filter(x=>x!==k) : Object.keys(CHANNELS).filter(x=>x===k||d.active.includes(x));
+      touch(n); renderEditor();
+    }}));
+  });
+  box.appendChild(el("div",{class:"block"},[el("div",{class:"f",text:"Where I'm posting today"}),chips]));
+  if(!d.active.length) box.appendChild(el("p",{class:"hint",text:"Pick at least one place above to start planning this day."}));
+  d.active.forEach(k=>box.appendChild(renderChannel(n,d,k)));
+
+  const bar=el("div",{class:"done-bar"});
+  if(!d.done){
+    bar.appendChild(el("button",{type:"button",class:"done-btn",text:`Done with Day ${n}`,onclick:()=>{
+      d.done=true; touch(n); toast(`Day ${n} done. You showed up.`);
+      if(n<DAYS) current=n+1; renderAll(); window.scrollTo({top:0,behavior:"smooth"});
+    }}));
+  } else {
+    bar.appendChild(el("div",{class:"done-btn is-done",text:`Day ${n} is done`}));
+    bar.appendChild(el("button",{type:"button",class:"undo",text:"Mark as not done",onclick:()=>{ d.done=false; touch(n); renderAll(); }}));
+  }
+  box.appendChild(bar);
+}
+function renderAll(){ renderDots(); renderProgress(); renderEditor(); }
+
+$("convPlus").addEventListener("click",()=>{ state.conversations=(state.conversations||0)+1; touch("meta"); renderProgress(); });
+$("convMinus").addEventListener("click",()=>{ state.conversations=Math.max(0,(state.conversations||0)-1); touch("meta"); renderProgress(); });
+
+/* account sync */
+function setSync(m){ $("sync").textContent=m; }
+async function flush(){
+  if(!db||!uid||!dbWritable||!dirty.size) return;
+  const keys=[...dirty]; dirty.clear();
+  try{
+    for(const k of keys){
+      const body = k==="meta" ? {conversations:state.conversations||0, weeks:state.weeks||{}, updatedAt:state.updatedAt||0} : state.days[k];
+      await db.doc(`data/users/${uid}/${k==="meta"?"meta":"day-"+k}`).set(JSON.parse(JSON.stringify(body)));
+    }
+    setSync("Your plan saves to your account, so it's there on any device.");
+  }catch(err){
+    keys.forEach(k=>dirty.add(k));
+    if(err&&["invalid_argument","revoked","not_granted"].includes(err.code)){ dbWritable=false; setSync("Your plan saves on this device."); }
+  }
+}
+async function initSync(){
+  if(!window.claude||!window.claude.use) return;
+  try{
+    const [d,u,dl]=await Promise.all([window.claude.use("db"),window.claude.use("user"),window.claude.use("downloads")]);
+    if(dl){ downloads=dl; renderEditor(); }
+    if(!d||!u) return;
+    const id=await u.id(); if(!id) return;
+    db=d; uid=id; dbWritable=(await u.can("data.write"))!==false;
+    const snap=await db.collection(`data/users/${uid}`).get(); let changed=false;
+    snap.docs.forEach(doc=>{
+      const b=doc.exists&&doc.data(); if(!b) return;
+      if(doc.id==="meta"){ if((b.updatedAt||0)>(state.updatedAt||0)){ state.conversations=b.conversations||0; state.weeks=Object.assign({},b.weeks||{}); state.updatedAt=b.updatedAt; changed=true; } }
+      else if(doc.id.startsWith("day-")){ const n=doc.id.slice(4), l=state.days[n]; if(!l||(b.updatedAt||0)>(l.updatedAt||0)){ state.days[n]=JSON.parse(JSON.stringify(b)); changed=true; } }
+    });
+    if(state.updatedAt) dirty.add("meta");
+    Object.keys(state.days).forEach(n=>{ const r=snap.docs.find(x=>x.id==="day-"+n), rb=r&&r.data(); if(!rb||(state.days[n].updatedAt||0)>(rb.updatedAt||0)) dirty.add(n); });
+    if(changed){ saveLocal(); renderAll(); }
+    if(dbWritable){ setSync("Your plan saves to your account, so it's there on any device."); flush(); }
+  }catch(e){}
+}
+renderAll(); initSync();
+})();
+</script>
+</body>
+</html>
