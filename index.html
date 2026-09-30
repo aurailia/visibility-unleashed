@@ -159,6 +159,7 @@ select{font:inherit;color:inherit;padding:9px 12px;border:1px solid var(--line);
 details{margin-top:14px}
 summary{cursor:pointer;font-weight:600;color:var(--purple)}
 @media (max-width:520px){.wrow{grid-template-columns:1fr;gap:4px}}
+a.btn{display:inline-block;text-decoration:none;text-align:center}
 .ltitle{margin:16px 0 0;font-family:var(--display);font-size:1.9rem;font-weight:600;line-height:1.05}
 .count{margin-top:18px;font-size:.85rem;font-weight:600;color:var(--pink)}
 h2.sect{font-family:var(--display);font-size:1.7rem;font-weight:600;margin:32px 0 0;line-height:1.05}
@@ -1250,7 +1251,13 @@ const renderDesign = () => {
   const d=state.design;
   box.appendChild(el("div",{class:"pick-intro"},[
     el("h2",{text:"My design"}),
-    el("p",{text:"Answer these once. Your plan and your content ideas are built from your chart. Not sure about something? Leave it and come back. If you don't have your chart yet, pull it up on any free Human Design chart site first."})
+    el("p",{text:"Answer these once. Your plan and your content ideas are built from your chart. Not sure about something? Leave it and come back."})
+  ]));
+  box.appendChild(el("section",{class:"pcard chartlink","aria-label":"Get your free chart"},[
+    el("h3",{class:"sh",text:"Don't have your chart yet?"}),
+    el("p",{class:"hint",style:"margin:4px 0 12px",text:"You can get it free in a minute. Have your birth date, birth time and birth place handy. The exact time matters."}),
+    el("a",{class:"btn main",href:"https://jovianarchive.com/pages/get-your-human-design-chart",target:"_blank",rel:"noopener noreferrer",text:"Get my free chart"}),
+    el("p",{class:"hint",style:"margin:10px 0 0",text:"It opens in a new tab. Come back here when you have it."})
   ]));
   box.appendChild(designCard("Your type","Tap yours.",designChips(TYPES,id=>d.type===id,id=>{
     if(d.type==="ref"&&id!=="ref"){ d.open=[]; d.authority=""; }
