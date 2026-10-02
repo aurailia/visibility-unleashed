@@ -1867,17 +1867,19 @@ const buildPrompt = () => {
   L.push(lib
     ? "Step 3. Group my picks by platform, my main platform first, thinking about the formats I use. Don't assign days. Show me the list and let me move things around."+(named.length>1?" Ask me which offer each post is about, one offer per post.":"")
     : "Step 3. Match my picks to the days in my plan, thinking about each day's format. Show me the list and let me move things around."+(named.length>1?" Ask me which offer each day is about, one offer per day.":""));
-  L.push("Step 4. Coach me one post at a time, starting with "+(lib?"the first topic":"the first day")+". Tell me what to talk about: the point, a story or example from my own life I could use, and what my clients are feeling. Tell me how to say it: which of my throat voices and gates fits, how I could open it, and what to avoid. Then ask me to talk it out right here in the chat, out loud with dictation or typed like a voice note, freely and with passion. Tell me not to polish it.");
-  L.push("Step 5. After I talk, show me the strongest parts back in my own words, tell me where I lit up, and tell me where the post should start and where it should end with one next step to my one offer. Only write the post for me if I ask, and when I do, use my exact words as much as you can.");
   if(lib){
-    L.push("Step 6. When I've chosen my topics, give me a topic list as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Each post has a platform key from the list above, a short topic and an optional note with the angle or how I'll open it."+(named.length>1?" Add an offer for each post: the name of that post's one offer, exactly as I wrote it above.":"")+" Plain text only.");
+    L.push("Step 4. As soon as I confirm the list, and BEFORE we start on any post, give me my topic list as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Each post has a platform key from the list above, a short topic and an optional note with the angle or how I'll open it."+(named.length>1?" Add an offer for each post: the name of that post's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, ask me if I'm ready to start with the first topic.");
     L.push("");
     L.push(JSON.stringify({planner:"visibility-unleashed",mode:"library",posts:[named.length>1?{platform:pickedChannels()[0],topic:"...",note:"...",offer:"..."}:{platform:pickedChannels()[0],topic:"...",note:"..."}]},null,2));
+    L.push("");
   } else {
-    L.push("Step 6. When I've chosen my topics for the week, give me a topic plan as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Use the exact day numbers from my plan. Each day has a short topic and an optional note with the angle or how I'll open it."+(named.length>1?" Add an offer for each day: the name of that day's one offer, exactly as I wrote it above.":"")+" Plain text only.");
+    L.push("Step 4. As soon as I confirm the list, and BEFORE we start on any post, give me my topic plan as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Use the exact day numbers from my plan. Each day has a short topic and an optional note with the angle or how I'll open it."+(named.length>1?" Add an offer for each day: the name of that day's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, ask me if I'm ready to start with the first day.");
     L.push("");
     L.push(JSON.stringify({planner:"visibility-unleashed",week:w,days:[named.length>1?{day:a,topic:"...",note:"...",offer:"..."}:{day:a,topic:"...",note:"..."}]},null,2));
+    L.push("");
   }
+  L.push("Step 5. Coach me one post at a time, starting with "+(lib?"the first topic":"the first day")+". Tell me what to talk about: the point, a story or example from my own life I could use, and what my clients are feeling. Tell me how to say it: which of my throat voices and gates fits, how I could open it, and what to avoid. Then ask me to talk it out right here in the chat, out loud with dictation or typed like a voice note, freely and with passion. Tell me not to polish it.");
+  L.push("Step 6. After I talk, show me the strongest parts back in my own words, tell me where I lit up, and tell me where the post should start and where it should end with one next step to my one offer. Only write the post for me if I ask, and when I do, use my exact words as much as you can.");
   return L.join("\n");
 };
 
@@ -2106,12 +2108,14 @@ const withCounter = (field,k) => {
   field.appendChild(box);
   return field;
 };
-const writeUI = {text:"",items:null,warns:[],error:"",result:null,replace:false,allowMulti:false};
+const freshWriteUI = () => ({text:"",items:null,warns:[],error:"",result:null,replace:false,allowMulti:false});
+const writeUI = {day:freshWriteUI(), library:freshWriteUI()};
 const snippet = s => { const t=(s||"").replace(/\s+/g," ").trim(); return t.length>90?t.slice(0,90)+"...":t; };
 const renderWrite = () => {
   if(voiceStop) voiceStop();
   const box=$("view-write"); box.innerHTML="";
   const b=state.brief, lib=state.mode==="library";
+  const U=writeUI[lib?"library":"day"];
   if(!b.week){ const t=todayIndex(); b.week=t?weekOf(t):1; }
   let sn=0;
   box.appendChild(el("div",{class:"pick-intro"},[
@@ -2175,13 +2179,13 @@ const renderWrite = () => {
   ]));
   if(!pickedChannels().length) box.appendChild(el("button",{type:"button",class:"btn main",text:"Choose my platform",style:"margin-top:10px",onclick:()=>setView("pick")}));
   /* import */
-  const imp=el("textarea",{id:"wr-paste",rows:"6",placeholder:lib?"Paste your topic list here":"Paste your topic plan here"}); imp.value=writeUI.text;
+  const imp=el("textarea",{id:"wr-paste",rows:"6",placeholder:lib?"Paste your topic list here":"Paste your topic plan here"}); imp.value=U.text;
   const previewBox=el("div",{id:"wr-preview",role:"status"});
   const showPreview=()=>{
     previewBox.innerHTML="";
-    if(writeUI.error){ previewBox.appendChild(el("p",{class:"hint",text:writeUI.error,style:"margin:12px 0 0;color:var(--pink-text)"})); return; }
-    if(writeUI.result){
-      const r=writeUI.result;
+    if(U.error){ previewBox.appendChild(el("p",{class:"hint",text:U.error,style:"margin:12px 0 0;color:var(--pink-text)"})); return; }
+    if(U.result){
+      const r=U.result;
       if(lib){
         previewBox.appendChild(el("p",{text:"Added "+r.count+" topic"+(r.count===1?"":"s")+" to your library.",style:"margin:14px 0 8px;font-weight:600"}));
         if(r.first) previewBox.appendChild(el("button",{type:"button",class:"btn main",text:"Open my library",onclick:()=>{ libUI.tab=r.first; libUI.filter="ready"; libUI.page="library"; setView("plan"); }}));
@@ -2191,10 +2195,10 @@ const renderWrite = () => {
       }
       return;
     }
-    if(!writeUI.items) return;
+    if(!U.items) return;
     const counts={add:0,replace:0,skip:0,done:0,multi:0};
-    const rows=writeUI.items.map(it=>{
-      const st = lib ? libStatus(it,writeUI.allowMulti) : topicStatus(it,writeUI.replace,writeUI.allowMulti);
+    const rows=U.items.map(it=>{
+      const st = lib ? libStatus(it,U.allowMulti) : topicStatus(it,U.replace,U.allowMulti);
       counts[st]++;
       const tag={add:"Adds",replace:"Replaces",skip:lib?"Skipped, it's already in your library":"Skipped, you already have a topic here",done:"Skipped, this day is done",multi:"Skipped, it mentions your other offer"}[st];
       const oi2=(it.offer===0||it.offer===1)?it.offer:null;
@@ -2202,35 +2206,35 @@ const renderWrite = () => {
       return el("div",{class:"vcard"},[el("div",{class:"wtitle",text:head}), el("p",{style:"margin:6px 0 0"},[el("strong",{text:snippet(it.topic||it.note)}),el("span",{class:"hint",text:"  "+tag+"."})]), (oi2!=null&&namedOffers().length>1)?el("div",{class:"hint",text:"Offer: "+offerLabel(oi2)}):null]);
     });
     const use=counts.add+counts.replace, skipped=counts.skip+counts.done+counts.multi;
-    previewBox.appendChild(el("p",{text:writeUI.items.length+(lib?" post":" day")+(writeUI.items.length===1?"":"s")+" found. "+use+" topic"+(use===1?"":"s")+" will be added"+(skipped?", "+skipped+" skipped.":"."),style:"margin:14px 0 8px;font-weight:600"}));
-    writeUI.warns.slice(0,5).forEach(w=>previewBox.appendChild(el("p",{class:"hint",text:w,style:"margin:0 0 4px"})));
+    previewBox.appendChild(el("p",{text:U.items.length+(lib?" post":" day")+(U.items.length===1?"":"s")+" found. "+use+" topic"+(use===1?"":"s")+" will be added"+(skipped?", "+skipped+" skipped.":"."),style:"margin:14px 0 8px;font-weight:600"}));
+    U.warns.slice(0,5).forEach(w=>previewBox.appendChild(el("p",{class:"hint",text:w,style:"margin:0 0 4px"})));
     rows.forEach(r=>previewBox.appendChild(r));
     if(!lib){
-      const rep=el("input",{id:"wr-replace",type:"checkbox"}); rep.checked=writeUI.replace;
-      rep.addEventListener("change",()=>{ writeUI.replace=rep.checked; showPreview(); });
+      const rep=el("input",{id:"wr-replace",type:"checkbox"}); rep.checked=U.replace;
+      rep.addEventListener("change",()=>{ U.replace=rep.checked; showPreview(); });
       previewBox.appendChild(el("div",{class:"chk",style:"margin:12px 0"},[rep, el("label",{for:"wr-replace",text:"Replace topics I've already added"})]));
     }
     if(counts.multi>0){
-      const am=el("input",{id:"wr-multi",type:"checkbox"}); am.checked=writeUI.allowMulti;
-      am.addEventListener("change",()=>{ writeUI.allowMulti=am.checked; showPreview(); });
+      const am=el("input",{id:"wr-multi",type:"checkbox"}); am.checked=U.allowMulti;
+      am.addEventListener("change",()=>{ U.allowMulti=am.checked; showPreview(); });
       previewBox.appendChild(el("p",{class:"hint",text:"Some topics talk about your other offer. One offer per post works best. Ask your coach to rework them, or add them anyway and edit.",style:"margin:0 0 6px"}));
       previewBox.appendChild(el("div",{class:"chk",style:"margin:6px 0 12px"},[am, el("label",{for:"wr-multi",text:"Add those topics anyway"})]));
     }
     if(use>0) previewBox.appendChild(el("button",{type:"button",class:"btn main",text:lib?"Add to my library":"Add to my planner",onclick:()=>{
-      writeUI.result = lib ? applyLibPosts(writeUI.items,writeUI.allowMulti) : applyTopics(writeUI.items,writeUI.replace,writeUI.allowMulti);
+      U.result = lib ? applyLibPosts(U.items,U.allowMulti) : applyTopics(U.items,U.replace,U.allowMulti);
       renderDots(); renderProgress(); saveLocal();
-      toast(lib?"Your topics are in your library.":"Your topics are in the planner."); showPreview();
+      U.text=""; imp.value=""; toast(lib?"Your topics are in your library.":"Your topics are in the planner."); showPreview();
     }}));
   };
   const check=()=>{
-    writeUI.text=imp.value; writeUI.result=null; writeUI.items=null; writeUI.warns=[]; writeUI.error="";
-    if(!imp.value.trim()){ writeUI.error=lib?"Paste your topic list first.":"Paste your topic plan first."; showPreview(); return; }
+    U.text=imp.value; U.result=null; U.items=null; U.warns=[]; U.error="";
+    if(!imp.value.trim()){ U.error=lib?"Paste your topic list first.":"Paste your topic plan first."; showPreview(); return; }
     const obj=parseAI(imp.value);
-    if(!obj){ writeUI.error="I couldn't read that. Make sure you pasted the whole code block your coach gave you, from the first curly bracket to the last."; showPreview(); return; }
-    if(!lib && !Array.isArray(obj.days)){ writeUI.error="That list is for the library. Switch to Post library above, or ask your coach for a plan by day."; showPreview(); return; }
+    if(!obj){ U.error="I couldn't read that. Make sure you pasted the whole code block your coach gave you, from the first curly bracket to the last."; showPreview(); return; }
+    if(!lib && !Array.isArray(obj.days)){ U.error="That list is for the library. Switch to Post library above, or ask your coach for a plan by day."; showPreview(); return; }
     const res = lib ? cleanPosts(obj) : cleanTopics(obj);
-    if(!res.items.length){ writeUI.error="I read it, but I didn't find any topics I could use. Ask your coach to follow the format in your prompt."; writeUI.warns=res.warns; showPreview(); return; }
-    writeUI.items=res.items; writeUI.warns=res.warns; showPreview();
+    if(!res.items.length){ U.error="I read it, but I didn't find any topics I could use. Ask your coach to follow the format in your prompt."; U.warns=res.warns; showPreview(); return; }
+    U.items=res.items; U.warns=res.warns; showPreview();
   };
   const fileInp=el("input",{id:"wr-file",type:"file",accept:".json,.txt,application/json,text/plain","aria-label":"Upload the file"});
   fileInp.addEventListener("change",()=>{
@@ -2354,7 +2358,7 @@ const libAdd = k => {
 const modeToggleNode = afterChange => {
   const mk=(m,label)=>el("button",{type:"button",class:"chip","aria-pressed":String(state.mode===m),text:label,onclick:()=>{
     if(state.mode===m) return;
-    state.mode=m; libUI.page="library"; touch("meta"); writeUI.items=null; writeUI.result=null; writeUI.error=""; afterChange();
+    state.mode=m; libUI.page="library"; touch("meta"); afterChange();
   }});
   return el("div",{class:"block ch modebar"},[
     el("div",{class:"f",text:"How do you want to plan?"}),
