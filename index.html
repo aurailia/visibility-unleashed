@@ -213,6 +213,8 @@ button.cchip:hover .ct{text-decoration:underline}
 .ccpill.over{background:var(--pink-soft);color:var(--pink-text);box-shadow:0 0 0 1px var(--pink)}
 .cchint{font-size:.78rem;color:var(--muted);margin-top:5px}
 .pubrow{margin-top:12px}
+.idea{border-top:1px solid var(--line);padding:10px 0}
+.idea:first-of-type{border-top:none}
 .publine{margin-top:12px}
 .cchip.posted .ck{color:var(--pink-text);font-weight:700;margin-left:2px}
 .cchip.posted .ct{color:var(--pink-text)}
@@ -631,6 +633,7 @@ function renderEditor(){
     el("div",{class:"chips",role:"group","aria-label":"Today's offer",style:"margin-top:6px"},namedOffers().map(x=>el("button",{type:"button",class:"chip","aria-pressed":String(d.offer===x.i),text:offerLabel(x.i),onclick:()=>{ d.offer=(d.offer===x.i)?null:x.i; touch(n); renderEditor(); }}))),
     el("p",{class:"hint",text:"One offer a day. Every post, Story and email today points to it and nothing else.",style:"margin:6px 0 0"})
   ] : [])));
+  if(Array.isArray(d.moreTopics) && d.moreTopics.length) box.appendChild(ideasBlock(n,d));
   const chips=el("div",{class:"chips",role:"group","aria-label":"Where I'm posting"});
   Object.entries(CHANNELS).forEach(([k,def])=>{
     const on=d.active.includes(k);
@@ -1908,20 +1911,63 @@ const cleanTopics = obj => {
   items.sort((x,y)=>x.n-y.n);
   return {items:items,warns:warns};
 };
-const topicStatus = (it,replace,allowMulti) => {
+const ideasUI = {armed:null};
+const dayHasTopicText = (d,text) => {
+  const t=(text||"").trim().toLowerCase(); if(!t) return false;
+  if((d.topic||"").trim().toLowerCase()===t) return true;
+  return (d.moreTopics||[]).some(x=>(x.topic||"").trim().toLowerCase()===t);
+};
+const ideasBlock = (n,d) => {
+  const wrap=el("div",{class:"block ch"},[
+    el("div",{class:"f",text:"More ideas for this day"}),
+    el("p",{class:"hint",text:"Other topics you liked. Pick one to make it today's topic, and the current one moves down here so nothing is lost.",style:"margin:4px 0 8px"})
+  ]);
+  d.moreTopics.forEach((idea,i)=>{
+    const key=n+"-"+i;
+    wrap.appendChild(el("div",{class:"idea"},[
+      el("div",{class:"wtitle",text:idea.topic||idea.note}),
+      (idea.topic&&idea.note)?el("div",{class:"hint",text:idea.note}):null,
+      ((idea.offer===0||idea.offer===1)&&namedOffers().length>1)?el("div",{class:"hint",text:"Offer: "+offerLabel(idea.offer)}):null,
+      el("div",{class:"pact"},[
+        el("button",{type:"button",class:"btn main",text:"Use this one",onclick:()=>{
+          const prev={topic:d.topic||"",note:d.angle||"",offer:(d.offer===0||d.offer===1)?d.offer:null};
+          d.topic=idea.topic||""; d.angle=idea.note||"";
+          if(idea.offer===0||idea.offer===1) d.offer=idea.offer;
+          if(prev.topic.trim()||prev.note.trim()) d.moreTopics[i]=prev; else d.moreTopics.splice(i,1);
+          touch(n); renderEditor();
+        }}),
+        el("button",{type:"button",class:"btn",text:ideasUI.armed===key?"Tap again to remove":"Remove",onclick:()=>{
+          if(ideasUI.armed!==key){ ideasUI.armed=key; renderEditor(); setTimeout(()=>{ if(ideasUI.armed===key){ ideasUI.armed=null; if(view==="plan"&&state.mode==="day") renderEditor(); } },3500); return; }
+          ideasUI.armed=null; d.moreTopics.splice(i,1); touch(n); renderEditor();
+        }})
+      ])
+    ]));
+  });
+  return wrap;
+};
+const topicStatus = (it,allowMulti) => {
   const d=state.days[it.n];
   if(d&&d.done) return "done";
   const oi=(it.offer===0||it.offer===1)?it.offer:dayOfferIdx(it.n);
   if(!allowMulti && offerConflict(oi,{text:it.topic+" "+it.note})) return "multi";
-  if(d && d.topic && d.topic.trim()) return replace ? "replace" : "skip";
+  if(d && dayHasTopicText(d,it.topic)) return "skip";
+  if(d && ((d.topic&&d.topic.trim())||(d.angle&&d.angle.trim()))) return ((d.moreTopics||[]).length>=10) ? "skip" : "more";
   return "add";
 };
-const applyTopics = (items,replace,allowMulti) => {
+const applyTopics = (items,allowMulti) => {
   let count=0, first=null;
   items.forEach(it=>{
-    const st=topicStatus(it,replace,allowMulti);
-    if(st!=="add"&&st!=="replace") return;
-    const d=getDay(it.n); d.topic=it.topic; d.angle=it.note; if(it.offer===0||it.offer===1) d.offer=it.offer; touch(it.n);
+    const st=topicStatus(it,allowMulti);
+    if(st!=="add"&&st!=="more") return;
+    const d=getDay(it.n);
+    if(st==="more"){
+      if(!Array.isArray(d.moreTopics)) d.moreTopics=[];
+      d.moreTopics.push({topic:it.topic,note:it.note,offer:(it.offer===0||it.offer===1)?it.offer:null});
+    } else {
+      d.topic=it.topic; d.angle=it.note;
+      if((it.offer===0||it.offer===1) && !(d.offer===0||d.offer===1)) d.offer=it.offer;
+    }
+    touch(it.n);
     count++; if(first==null||it.n<first) first=it.n;
   });
   return {count:count,first:first};
@@ -1955,15 +2001,16 @@ const libStatus = (it,allowMulti) => {
 };
 const applyLibPosts = (items,allowMulti) => {
   let count=0, first=null;
+  let full=false;
   items.forEach(it=>{
     if(libStatus(it,allowMulti)!=="add") return;
-    if(libTooBig()) return;
+    if(libTooBig()){ full=true; return; }
     const np=newPost(it.k,{name:it.topic||it.note,angle:it.topic?it.note:"",offer:(it.offer===0||it.offer===1)?it.offer:(namedOffers().length===1?namedOffers()[0].i:null)});
     libAutoLink(np); libList(it.k).unshift(np);
     count++; if(first==null) first=it.k;
   });
   if(count) touch("lib");
-  return {count:count,first:first};
+  return {count:count,first:first,full:full};
 };
 
 /* ---------- voice note for "how do you talk" ---------- */
@@ -2187,7 +2234,7 @@ const renderWrite = () => {
     if(U.result){
       const r=U.result;
       if(lib){
-        previewBox.appendChild(el("p",{text:"Added "+r.count+" topic"+(r.count===1?"":"s")+" to your library.",style:"margin:14px 0 8px;font-weight:600"}));
+        previewBox.appendChild(el("p",{text:"Added "+r.count+" topic"+(r.count===1?"":"s")+" to your library."+(r.full?" Your library is full, so some weren't added.":""),style:"margin:14px 0 8px;font-weight:600"}));
         if(r.first) previewBox.appendChild(el("button",{type:"button",class:"btn main",text:"Open my library",onclick:()=>{ libUI.tab=r.first; libUI.filter="ready"; libUI.page="library"; setView("plan"); }}));
       } else {
         previewBox.appendChild(el("p",{text:"Added topics to "+r.count+" day"+(r.count===1?"":"s")+".",style:"margin:14px 0 8px;font-weight:600"}));
@@ -2196,24 +2243,20 @@ const renderWrite = () => {
       return;
     }
     if(!U.items) return;
-    const counts={add:0,replace:0,skip:0,done:0,multi:0};
+    const counts={add:0,replace:0,skip:0,done:0,multi:0,more:0};
     const rows=U.items.map(it=>{
-      const st = lib ? libStatus(it,U.allowMulti) : topicStatus(it,U.replace,U.allowMulti);
+      const st = lib ? libStatus(it,U.allowMulti) : topicStatus(it,U.allowMulti);
       counts[st]++;
-      const tag={add:"Adds",replace:"Replaces",skip:lib?"Skipped, it's already in your library":"Skipped, you already have a topic here",done:"Skipped, this day is done",multi:"Skipped, it mentions your other offer"}[st];
+      const tag={add:"Adds",replace:"Replaces",more:"Adds as another idea for this day",skip:lib?"Skipped, it's already in your library":"Skipped, it's already on this day",done:"Skipped, this day is done",multi:"Skipped, it mentions your other offer"}[st];
       const oi2=(it.offer===0||it.offer===1)?it.offer:null;
       const head=lib ? libName(it.k) : "Day "+it.n+", "+longDate(it.n);
       return el("div",{class:"vcard"},[el("div",{class:"wtitle",text:head}), el("p",{style:"margin:6px 0 0"},[el("strong",{text:snippet(it.topic||it.note)}),el("span",{class:"hint",text:"  "+tag+"."})]), (oi2!=null&&namedOffers().length>1)?el("div",{class:"hint",text:"Offer: "+offerLabel(oi2)}):null]);
     });
-    const use=counts.add+counts.replace, skipped=counts.skip+counts.done+counts.multi;
+    const use=counts.add+counts.replace+counts.more, skipped=counts.skip+counts.done+counts.multi;
     previewBox.appendChild(el("p",{text:U.items.length+(lib?" post":" day")+(U.items.length===1?"":"s")+" found. "+use+" topic"+(use===1?"":"s")+" will be added"+(skipped?", "+skipped+" skipped.":"."),style:"margin:14px 0 8px;font-weight:600"}));
+    previewBox.appendChild(el("p",{class:"hint",text:lib?"Nothing in your library is changed. These are added as new posts.":"Nothing you've already written is changed. If a day already has a topic, the new one is added to that day as another idea.",style:"margin:0 0 6px"}));
     U.warns.slice(0,5).forEach(w=>previewBox.appendChild(el("p",{class:"hint",text:w,style:"margin:0 0 4px"})));
     rows.forEach(r=>previewBox.appendChild(r));
-    if(!lib){
-      const rep=el("input",{id:"wr-replace",type:"checkbox"}); rep.checked=U.replace;
-      rep.addEventListener("change",()=>{ U.replace=rep.checked; showPreview(); });
-      previewBox.appendChild(el("div",{class:"chk",style:"margin:12px 0"},[rep, el("label",{for:"wr-replace",text:"Replace topics I've already added"})]));
-    }
     if(counts.multi>0){
       const am=el("input",{id:"wr-multi",type:"checkbox"}); am.checked=U.allowMulti;
       am.addEventListener("change",()=>{ U.allowMulti=am.checked; showPreview(); });
@@ -2221,7 +2264,7 @@ const renderWrite = () => {
       previewBox.appendChild(el("div",{class:"chk",style:"margin:6px 0 12px"},[am, el("label",{for:"wr-multi",text:"Add those topics anyway"})]));
     }
     if(use>0) previewBox.appendChild(el("button",{type:"button",class:"btn main",text:lib?"Add to my library":"Add to my planner",onclick:()=>{
-      U.result = lib ? applyLibPosts(U.items,U.allowMulti) : applyTopics(U.items,U.replace,U.allowMulti);
+      U.result = lib ? applyLibPosts(U.items,U.allowMulti) : applyTopics(U.items,U.allowMulti);
       renderDots(); renderProgress(); saveLocal();
       U.text=""; imp.value=""; toast(lib?"Your topics are in your library.":"Your topics are in the planner."); showPreview();
     }}));
