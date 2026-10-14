@@ -2244,7 +2244,7 @@ const renderWrite = () => {
       const r=U.result;
       if(lib){
         previewBox.appendChild(el("p",{text:"Added "+r.count+" topic"+(r.count===1?"":"s")+" to your library."+(r.full?" Your library is full, so some weren't added.":""),style:"margin:14px 0 8px;font-weight:600"}));
-        if(r.first) previewBox.appendChild(el("button",{type:"button",class:"btn main",text:"Open my library",onclick:()=>{ libUI.tab=r.first; libUI.filter="ready"; libUI.page="library"; setView("plan"); }}));
+        if(r.first) previewBox.appendChild(el("button",{type:"button",class:"btn main",text:"Open my library",onclick:()=>{ libUI.tab=r.first; libUI.filter="pending"; libUI.page="library"; setView("plan"); }}));
       } else {
         previewBox.appendChild(el("p",{text:"Added topics to "+r.count+" day"+(r.count===1?"":"s")+".",style:"margin:14px 0 8px;font-weight:600"}));
         if(r.first) previewBox.appendChild(el("button",{type:"button",class:"btn main",text:"Open Day "+r.first,onclick:()=>{ current=r.first; setView("plan"); }}));
@@ -2378,7 +2378,7 @@ const renderCalendar = () => {
   }
 };
 /* ---------- post library ---------- */
-const libUI = {tab:null, filter:"ready", open:{}, armed:null, page:"library"};
+const libUI = {tab:null, filter:"pending", open:{}, armed:null, page:"library"};
 const libChannels = () => {
   const keys=pickedChannels().slice();
   if(usesStories()) keys.push("stories");
@@ -2388,8 +2388,8 @@ const libChannels = () => {
 };
 const libName = k => k==="email" ? "Email" : k==="video" ? "YouTube" : k==="stories" ? "Stories" : chName(k);
 const libList = k => { if(!Array.isArray(state.library[k])) state.library[k]=[]; return state.library[k]; };
-const libCount = (k,status) => libList(k).filter(p=>status==="used"?(p.status==="used"||p.status==="posted"):!(p.status==="used"||p.status==="posted")).length;
-const newPost = (k,o) => Object.assign({id:"p"+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36),name:"",angle:"",format:"reel",hook:"",title:"",caption:"",slides:["",""],cta:"",link:"",offer:null,status:"ready",usedDay:null,created:Date.now()},o||{});
+const libCount = (k,status) => libList(k).filter(p=>status==="used"?(p.status==="used"||p.status==="posted"):status==="pending"?p.status==="pending":!(p.status==="used"||p.status==="posted"||p.status==="pending")).length;
+const newPost = (k,o) => Object.assign({id:"p"+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36),name:"",angle:"",format:"reel",hook:"",title:"",caption:"",slides:["",""],cta:"",link:"",offer:null,status:"pending",usedDay:null,created:Date.now()},o||{});
 const postTitle = p => (p.name||"").trim() || (p.hook||"").trim() || (p.title||"").trim() || ((p.caption||"").trim().split("\n")[0]) || "Untitled post";
 const libCopyText = (k,p) => ((k!=="ig" && p.title && p.title.trim()) ? p.title.trim()+"\n\n" : "") + fullPost(p);
 const libUsedLabels = n => {
@@ -2403,7 +2403,7 @@ const libAdd = k => {
   const named=namedOffers();
   const p=newPost(k,{offer:named.length===1?named[0].i:null});
   libAutoLink(p);
-  libList(k).unshift(p); libUI.open[p.id]=true; libUI.filter="ready";
+  libList(k).unshift(p); libUI.open[p.id]=true; libUI.filter="pending";
   touch("lib"); renderLibrary();
   setTimeout(()=>{ const t=document.getElementById("lib-"+p.id+"-name"); if(t) t.focus(); },0);
 };
@@ -2463,7 +2463,7 @@ const libCard = (k,p) => {
   const bits=[];
   if(k==="ig") bits.push((IG_FORMATS[p.format]||IG_FORMATS.reel).label);
   if(namedOffers().length>1 && (p.offer===0||p.offer===1)) bits.push(offerLabel(p.offer));
-  bits.push(used ? "Used"+(p.usedAt?" "+shortDay(p.usedAt):"") : "Ready");
+  bits.push(used ? "Used"+(p.usedAt?" "+shortDay(p.usedAt):"") : p.status==="pending" ? "Pending" : "Ready");
   const titleEl=el("div",{class:"wtitle",text:postTitle(p)});
   const refresh=()=>{ titleEl.textContent=postTitle(p); };
   const card=el("section",{class:"pcard libpost","aria-label":postTitle(p)},[
@@ -2473,7 +2473,9 @@ const libCard = (k,p) => {
     el("div",{class:"pact"},[
       el("button",{type:"button",class:"btn","aria-expanded":String(isOpen),text:isOpen?"Close":"Edit",onclick:()=>{ libUI.open[p.id]=!isOpen; renderLibrary(); }}),
       el("button",{type:"button",class:"btn",text:"Copy post",onclick:()=>{ const t=libCopyText(k,p); if(!t.trim()){ toast("Nothing to copy yet. Open it and write something."); return; } copyText(t); }}),
-      used
+      (p.status==="pending")
+        ? el("button",{type:"button",class:"btn main",text:"Move to ready",onclick:()=>{ p.status="ready"; touch("lib"); toast("Moved to ready."); renderLibrary(); }})
+        : used
         ? el("button",{type:"button",class:"btn",text:"Use again",onclick:()=>{ p.status="ready"; p.usedAt=null; touch("lib"); renderLibrary(); }})
         : el("button",{type:"button",class:"btn main",text:"Mark as used",onclick:()=>{ p.status="used"; p.usedAt=Date.now(); touch("lib"); toast("Marked as used."); renderLibrary(); }}),
       el("button",{type:"button",class:"btn",text:libUI.armed===p.id?"Tap again to delete":"Delete",onclick:()=>{
@@ -2585,23 +2587,24 @@ const renderLibrary = () => {
   if(!libUI.tab || keys.indexOf(libUI.tab)===-1) libUI.tab=pickedChannels()[0];
   box.appendChild(el("div",{class:"pick-intro"},[
     el("h2",{text:"My library"}),
-    el("p",{text:"Write posts whenever you feel inspired. Pick one when you're ready to post, then mark it used. To update a day, tap it on the left or in your calendar."})
+    el("p",{text:"New topics start in Pending. Write the caption, move the post to Ready, then mark it used when you post it. To update a day, tap it on the left or in your calendar."})
   ]));
   box.appendChild(el("div",{class:"block",style:"margin-top:18px"},[
-    el("div",{class:"chips",role:"group","aria-label":"Platforms"},keys.map(k=>el("button",{type:"button",class:"chip","aria-pressed":String(libUI.tab===k),text:chIcon(k)+" "+libName(k)+" ("+libCount(k,"ready")+")",onclick:()=>{ libUI.tab=k; renderLibrary(); }})))
+    el("div",{class:"chips",role:"group","aria-label":"Platforms"},keys.map(k=>el("button",{type:"button",class:"chip","aria-pressed":String(libUI.tab===k),text:chIcon(k)+" "+libName(k)+" ("+(libCount(k,"ready")+libCount(k,"pending"))+")",onclick:()=>{ libUI.tab=k; renderLibrary(); }})))
   ]));
   const k=libUI.tab;
   box.appendChild(el("div",{class:"libbar"},[
     el("div",{class:"chips",role:"group","aria-label":"Filter"},[
       el("button",{type:"button",class:"chip","aria-pressed":String(libUI.filter==="ready"),text:"Ready ("+libCount(k,"ready")+")",onclick:()=>{ libUI.filter="ready"; renderLibrary(); }}),
+      el("button",{type:"button",class:"chip","aria-pressed":String(libUI.filter==="pending"),text:"Pending ("+libCount(k,"pending")+")",onclick:()=>{ libUI.filter="pending"; renderLibrary(); }}),
       el("button",{type:"button",class:"chip","aria-pressed":String(libUI.filter==="used"),text:"Used ("+libCount(k,"used")+")",onclick:()=>{ libUI.filter="used"; renderLibrary(); }})
     ]),
     el("button",{type:"button",class:"btn main",text:"Add a post to "+libName(k),onclick:()=>libAdd(k)})
   ]));
   { let ch=false; libList(k).forEach(p=>{ if(!isUsed(p) && libAutoLink(p)) ch=true; }); if(ch) touch("lib"); }
-  const list=libList(k).filter(p=>libUI.filter==="used"?isUsed(p):!isUsed(p));
+  const list=libList(k).filter(p=>libUI.filter==="used"?isUsed(p):libUI.filter==="pending"?(p.status==="pending"):(!isUsed(p)&&p.status!=="pending"));
   if(!list.length){
-    box.appendChild(el("p",{class:"hint",style:"margin:14px 2px",text:libUI.filter==="ready"?"Nothing here yet. Add a post whenever you feel inspired, or write a bunch on a day you have the energy and they'll be ready to go.":"Nothing used from this tab yet."}));
+    box.appendChild(el("p",{class:"hint",style:"margin:14px 2px",text:libUI.filter==="pending"?"Nothing pending. New topics land here until you write the caption and move them to Ready.":libUI.filter==="ready"?"Nothing ready yet. When a post is written and set up, move it here from Pending.":"Nothing used from this tab yet."}));
   } else list.forEach(p=>box.appendChild(libCard(k,p)));
 };
 const openCards = new Set();
