@@ -1857,6 +1857,7 @@ const buildPrompt = () => {
   L.push("");
   L.push("RULES");
   L.push("- Promote one offer per post. Never put two offers in the same post, Story or email, and never compare or bundle offers. Every post ends with one clear next step that leads to "+(lib?"that post's":"that day's")+" offer.");
+  if((state.picks||[]).indexOf("instagram")>-1&&(state.picks||[]).indexOf("facebook")>-1) L.push("- Instagram and Facebook are ONE post for me. Write it once and I share the same post on both. Never write a separate Facebook version, and never give me two posts for the same idea.");
   L.push("- On feed posts the next step is 'link in my bio'. In Stories, the offer link goes in the link sticker.");
   L.push("- If my offer is a course, artifact or event inside my Skool community, mention it by name in Stories and link to the community.");
   L.push("- Share what's inside an offer and let people ask for access. Skip 'join my community' pitches.");
@@ -1871,21 +1872,22 @@ const buildPrompt = () => {
     ? "Step 3. Group my picks by platform, my main platform first, thinking about the formats I use. Don't assign days. Show me the list and let me move things around."+(named.length>1?" Ask me which offer each post is about, one offer per post.":"")
     : "Step 3. Match my picks to the days in my plan, thinking about each day's format. Show me the list and let me move things around."+(named.length>1?" Ask me which offer each day is about, one offer per day.":""));
   if(lib){
-    L.push("Step 4. Write every post in full, one after another, in my voice, for "+libName(pickedChannels()[0])+" and the formats I use. Each ends with one clear next step to that post's one offer. Keep each caption inside its limit"+capLimits()+". If a post needs a real story or number from me, ask me before you write it. Show me the posts here in the chat and ask what I want changed. If I'd rather talk a post out first, coach me: what to talk about, a story from my own life, which of my throat voices and gates fits, and how I could open it. Then I'll talk freely and you'll use my exact words.");
-    L.push("Step 5. When I'm happy with the posts, give me everything as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Each post has a platform key from the list above, a short title in \"topic\", a \"description\" of the post in 1 to 3 plain sentences, an optional \"note\" with how I open it, and the full finished post in \"caption\" exactly as I'll post it, with line breaks written as \\n."+(named.length>1?" Add an offer for each post: the name of that post's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, tell me to copy it back into my planner, or save it as a file and upload it.");
+    L.push("Step 4. Write every post in full, one after another, in my voice, for "+libName(pickedChannels()[0])+" and the formats I use. Each ends with one clear next step to that post's one offer. For each post also give me a hook, the short words to place on the photo or video (3 to 8 words, it should make someone stop scrolling and read the first line of the post), and hashtags to add under the caption"+hashRule()+". Keep each caption, hashtags included, inside its limit"+capLimits()+". If a post needs a real story or number from me, ask me before you write it. Show me the posts here in the chat and ask what I want changed. If I'd rather talk a post out first, coach me: what to talk about, a story from my own life, which of my throat voices and gates fits, and how I could open it. Then I'll talk freely and you'll use my exact words.");
+    L.push("Step 5. When I'm happy with the posts, give me everything as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Each post has a platform key from the list above, a short title in \"topic\", a \"description\" of the post in 1 to 3 plain sentences, an optional \"note\" with how I open it, the full finished post in \"caption\" exactly as I'll post it with line breaks written as \\n and no hashtags in it, a \"hook\" with the words for the photo or video, and \"hashtags\" as a list of tags."+(named.length>1?" Add an offer for each post: the name of that post's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, tell me to copy it back into my planner, or save it as a file and upload it.");
     L.push("");
-    L.push(JSON.stringify({planner:"visibility-unleashed",mode:"library",posts:[named.length>1?{platform:pickedChannels()[0],topic:"...",description:"...",note:"...",caption:"...",offer:"..."}:{platform:pickedChannels()[0],topic:"...",description:"...",note:"...",caption:"..."}]},null,2));
+    L.push(JSON.stringify({planner:"visibility-unleashed",mode:"library",posts:[named.length>1?{platform:pickedChannels()[0],topic:"...",description:"...",note:"...",hook:"...",caption:"...",hashtags:["#..."],offer:"..."}:{platform:pickedChannels()[0],topic:"...",description:"...",note:"...",hook:"...",caption:"...",hashtags:["#..."]}]},null,2));
     L.push("");
   } else {
-    L.push("Step 4. Write every post in full, one day after another, in my voice, for the platform and format of that day's main post. Each ends with one clear next step to that day's one offer. Keep each caption inside its limit"+capLimits()+". If a post needs a real story or number from me, ask me before you write it. Show me the posts here in the chat and ask what I want changed. If I'd rather talk a post out first, coach me: what to talk about, a story from my own life, which of my throat voices and gates fits, and how I could open it. Then I'll talk freely and you'll use my exact words.");
-    L.push("Step 5. When I'm happy with the posts, give me everything as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Use the exact day numbers from my plan. Each day has a short title in \"topic\", a \"description\" of the post in 1 to 3 plain sentences, an optional \"note\" with how I open it, and the full finished main post in \"caption\" exactly as I'll post it, with line breaks written as \\n."+(named.length>1?" Add an offer for each day: the name of that day's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, tell me to copy it back into my planner, or save it as a file and upload it.");
+    L.push("Step 4. Write every post in full, one day after another, in my voice, for the platform and format of that day's main post. Each ends with one clear next step to that day's one offer. For each post also give me a hook, the short words to place on the photo or video (3 to 8 words, it should make someone stop scrolling and read the first line of the post), and hashtags to add under the caption"+hashRule()+". Keep each caption, hashtags included, inside its limit"+capLimits()+". If a post needs a real story or number from me, ask me before you write it. Show me the posts here in the chat and ask what I want changed. If I'd rather talk a post out first, coach me: what to talk about, a story from my own life, which of my throat voices and gates fits, and how I could open it. Then I'll talk freely and you'll use my exact words.");
+    L.push("Step 5. When I'm happy with the posts, give me everything as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Use the exact day numbers from my plan. Each day has a short title in \"topic\", a \"description\" of the post in 1 to 3 plain sentences, an optional \"note\" with how I open it, the full finished main post in \"caption\" exactly as I'll post it with line breaks written as \\n and no hashtags in it, a \"hook\" with the words for the photo or video, and \"hashtags\" as a list of tags."+(named.length>1?" Add an offer for each day: the name of that day's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, tell me to copy it back into my planner, or save it as a file and upload it.");
     L.push("");
-    L.push(JSON.stringify({planner:"visibility-unleashed",week:w,days:[named.length>1?{day:a,topic:"...",description:"...",note:"...",caption:"...",offer:"..."}:{day:a,topic:"...",description:"...",note:"...",caption:"..."}]},null,2));
+    L.push(JSON.stringify({planner:"visibility-unleashed",week:w,days:[named.length>1?{day:a,topic:"...",description:"...",note:"...",hook:"...",caption:"...",hashtags:["#..."],offer:"..."}:{day:a,topic:"...",description:"...",note:"...",hook:"...",caption:"...",hashtags:["#..."]}]},null,2));
     L.push("");
   }
   return L.join("\n");
 };
-const capLimits = () => { const l=(state.picks||[]).filter(id=>LIMITS[id]&&id!=="youtube").map(id=>LIMITS[id].name+" "+LIMITS[id].max); return l.length?": "+l.join(", ")+" characters":""; };
+const hashRule = () => { const ids=state.picks||[]; const r=[]; if(ids.indexOf("instagram")>-1||ids.indexOf("facebook")>-1) r.push("Instagram 3 to 5 relevant ones"); if(ids.indexOf("tiktok")>-1) r.push("TikTok 3 to 5"); if(ids.indexOf("threads")>-1) r.push("Threads 1 topic tag"); if(ids.indexOf("linkedin")>-1) r.push("LinkedIn 3"); if(ids.indexOf("pinterest")>-1) r.push("Pinterest 2 to 5"); return r.length?" ("+r.join(", ")+"; skip them on email and Substack)":""; };
+const capLimits = () => { const pk=state.picks||[], both=pk.indexOf("instagram")>-1&&pk.indexOf("facebook")>-1; const l=pk.filter(id=>LIMITS[id]&&id!=="youtube"&&!(both&&id==="facebook")).map(id=>(id==="instagram"&&both?"Instagram and Facebook":LIMITS[id].name)+" "+LIMITS[id].max); return l.length?": "+l.join(", ")+" characters":""; };
 
 /* import: topics */
 const parseAI = text => {
@@ -1897,6 +1899,13 @@ const parseAI = text => {
   return (obj&&typeof obj==="object"&&(Array.isArray(obj.days)||Array.isArray(obj.posts))) ? obj : null;
 };
 /* description = what the post covers; note = how to open it. Stored together in the post's angle. */
+const mergeCaption = (row,str) => {
+  const cap=str(row.caption,5000);
+  let h=row.hashtags; if(Array.isArray(h)) h=h.join(" ");
+  const tags=[]; String(h==null?"":h).split(/[\s,]+/).forEach(t=>{ t=t.replace(/^#+/,"").replace(/[^\p{L}\p{N}_]/gu,""); if(t&&tags.indexOf("#"+t)===-1&&tags.length<15) tags.push("#"+t); });
+  const line=tags.filter(t=>cap.toLowerCase().indexOf(t.toLowerCase())===-1).join(" ");
+  return line ? (cap ? cap+"\n\n"+line : line).slice(0,5200) : cap;
+};
 const mergeDesc = (row,str) => {
   const d=str(row.description||row.desc,1200), o=str(row.note,500);
   return d ? (o ? d+"\n\nHow to open it: "+o : d) : o;
@@ -1907,12 +1916,12 @@ const cleanTopics = obj => {
   obj.days.forEach(row=>{
     const n=Number(row&&row.day);
     if(!Number.isInteger(n)||n<1||n>DAYS){ warns.push("Skipped a day with a number I couldn't read."); return; }
-    const topic=str(row.topic,300), note=mergeDesc(row,str), caption=str(row.caption,5000);
+    const topic=str(row.topic,300), note=mergeDesc(row,str), caption=mergeCaption(row,str), hook=str(row.hook,200);
     if(!topic&&!note){ warns.push("Day "+n+" had no topic."); return; }
     const raw=str(row.offer,80);
     const offer=resolveOffer(raw);
     if(raw && offer==null && namedOffers().length>1) warns.push("Day "+n+": I couldn't match the offer '"+raw.slice(0,40)+"'. Pick it in the planner.");
-    items.push({n:n,topic:topic,note:note,caption:caption,offer:offer});
+    items.push({n:n,topic:topic,note:note,caption:caption,hook:hook,offer:offer});
   });
   items.sort((x,y)=>x.n-y.n);
   return {items:items,warns:warns};
@@ -1938,7 +1947,7 @@ const ideasBlock = (n,d) => {
         el("button",{type:"button",class:"btn main",text:"Use this one",onclick:()=>{
           const prev={topic:d.topic||"",note:d.angle||"",offer:(d.offer===0||d.offer===1)?d.offer:null};
           d.topic=idea.topic||""; d.angle=idea.note||"";
-          if(idea.caption){ const mk=mainKey(d); if(mk){ const c=getCh(d,mk); prev.caption=c.caption||""; c.caption=idea.caption; } }
+          if(idea.caption||idea.hook){ const mk=mainKey(d); if(mk){ const c=getCh(d,mk); if(idea.caption){ prev.caption=c.caption||""; c.caption=idea.caption; } if(idea.hook&&(mk==="ig"||mk==="tiktok")){ prev.hook=c.hook||""; c.hook=idea.hook; } } }
           if(idea.offer===0||idea.offer===1) d.offer=idea.offer;
           if(prev.topic.trim()||prev.note.trim()) d.moreTopics[i]=prev; else d.moreTopics.splice(i,1);
           touch(n); renderEditor();
@@ -1970,10 +1979,10 @@ const applyTopics = (items,allowMulti) => {
     const d=getDay(it.n);
     if(st==="more"){
       if(!Array.isArray(d.moreTopics)) d.moreTopics=[];
-      d.moreTopics.push({topic:it.topic,note:it.note,caption:it.caption||"",offer:(it.offer===0||it.offer===1)?it.offer:null});
+      d.moreTopics.push({topic:it.topic,note:it.note,caption:it.caption||"",hook:it.hook||"",offer:(it.offer===0||it.offer===1)?it.offer:null});
     } else {
       d.topic=it.topic; d.angle=it.note;
-      if(it.caption){ const mk=mainKey(d); if(mk){ const c=getCh(d,mk); if(!(c.caption||"").trim()) c.caption=it.caption; } }
+      if(it.caption||it.hook){ const mk=mainKey(d); if(mk){ const c=getCh(d,mk); if(it.caption && !(c.caption||"").trim()) c.caption=it.caption; if(it.hook && (mk==="ig"||mk==="tiktok") && !(c.hook||"").trim()) c.hook=it.hook; } }
       if((it.offer===0||it.offer===1) && !(d.offer===0||d.offer===1)) d.offer=it.offer;
     }
     touch(it.n);
@@ -1994,11 +2003,11 @@ const cleanPosts = obj => {
       if(hit) k=hit;
       else { if(k) warns.push("Post "+(i+1)+": I didn't know the platform '"+k.slice(0,30)+"', so I put it under "+libName(main)+"."); k=main; }
     }
-    const topic=str(row&&row.topic,300), note=mergeDesc(row||{},str), caption=str(row&&row.caption,5000);
+    const topic=str(row&&row.topic,300), note=mergeDesc(row||{},str), caption=mergeCaption(row||{},str), hook=str(row&&row.hook,200);
     if(!topic&&!note){ warns.push("Post "+(i+1)+" had no topic."); return; }
     const raw=str(row&&row.offer,80), offer=resolveOffer(raw);
     if(raw && offer==null && namedOffers().length>1) warns.push("Post "+(i+1)+": I couldn't match the offer '"+raw.slice(0,40)+"'. Pick it in the library.");
-    items.push({k:k,topic:topic,note:note,caption:caption,offer:offer});
+    items.push({k:k,topic:topic,note:note,caption:caption,hook:hook,offer:offer});
   });
   return {items:items,warns:warns};
 };
@@ -2014,7 +2023,7 @@ const applyLibPosts = (items,allowMulti) => {
   items.forEach(it=>{
     if(libStatus(it,allowMulti)!=="add") return;
     if(libTooBig()){ full=true; return; }
-    const np=newPost(it.k,{name:it.topic||it.note,angle:it.topic?it.note:"",caption:it.caption||"",offer:(it.offer===0||it.offer===1)?it.offer:(namedOffers().length===1?namedOffers()[0].i:null)});
+    const np=newPost(it.k,{name:it.topic||it.note,angle:it.topic?it.note:"",caption:it.caption||"",hook:(it.k==="ig"||it.k==="tiktok")?(it.hook||""):"",offer:(it.offer===0||it.offer===1)?it.offer:(namedOffers().length===1?namedOffers()[0].i:null)});
     libAutoLink(np); libList(it.k).unshift(np);
     count++; if(first==null) first=it.k;
   });
@@ -2259,7 +2268,7 @@ const renderWrite = () => {
       const tag={add:"Adds",replace:"Replaces",more:"Adds as another idea for this day",skip:lib?"Skipped, it's already in your library":"Skipped, it's already on this day",done:"Skipped, this day is done",multi:"Skipped, it mentions your other offer"}[st];
       const oi2=(it.offer===0||it.offer===1)?it.offer:null;
       const head=lib ? libName(it.k) : "Day "+it.n+", "+longDate(it.n);
-      return el("div",{class:"vcard"},[el("div",{class:"wtitle",text:head}), el("p",{style:"margin:6px 0 0"},[el("strong",{text:snippet(it.topic||it.note)}),el("span",{class:"hint",text:"  "+tag+"."})]), (it.caption)?el("div",{class:"hint",text:"Includes the written post ("+it.caption.length+" characters)."}):null, (it.topic&&it.note)?el("div",{class:"hint",text:it.note.length>220?it.note.slice(0,220)+"...":it.note,style:"white-space:pre-line"}):null, (oi2!=null&&namedOffers().length>1)?el("div",{class:"hint",text:"Offer: "+offerLabel(oi2)}):null]);
+      return el("div",{class:"vcard"},[el("div",{class:"wtitle",text:head}), el("p",{style:"margin:6px 0 0"},[el("strong",{text:snippet(it.topic||it.note)}),el("span",{class:"hint",text:"  "+tag+"."})]), (it.caption||it.hook)?el("div",{class:"hint",text:"Includes "+[it.caption?"the written post ("+it.caption.length+" characters)":"",it.hook?"a hook":""].filter(Boolean).join(" and ")+"."}):null, (it.topic&&it.note)?el("div",{class:"hint",text:it.note.length>220?it.note.slice(0,220)+"...":it.note,style:"white-space:pre-line"}):null, (oi2!=null&&namedOffers().length>1)?el("div",{class:"hint",text:"Offer: "+offerLabel(oi2)}):null]);
     });
     const use=counts.add+counts.replace+counts.more, skipped=counts.skip+counts.done+counts.multi;
     previewBox.appendChild(el("p",{text:U.items.length+(lib?" post":" day")+(U.items.length===1?"":"s")+" found. "+use+" topic"+(use===1?"":"s")+" will be added"+(skipped?", "+skipped+" skipped.":"."),style:"margin:14px 0 8px;font-weight:600"}));
