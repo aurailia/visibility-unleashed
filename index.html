@@ -622,12 +622,12 @@ function renderEditor(){
   ]));
 
   const tp=el("input",{id:"d"+n+"-topic",type:"text",placeholder:"What are you talking about today?"}); tp.value=d.topic||"";
-  const an=el("textarea",{id:"d"+n+"-angle",rows:"2",placeholder:"How you'll open it, or the angle (optional)"}); an.value=d.angle||"";
+  const an=el("textarea",{id:"d"+n+"-angle",rows:"2",placeholder:"What this post is about, and how you'll open it (optional)"}); an.value=d.angle||"";
   tp.addEventListener("input",()=>{ d.topic=tp.value; touch(n); renderDots(); });
   an.addEventListener("input",()=>{ d.angle=an.value; touch(n); });
   box.appendChild(el("div",{class:"block ch"},[
     el("label",{class:"f",for:"d"+n+"-topic",text:"Topic for today"}), tp,
-    el("label",{class:"f",for:"d"+n+"-angle",text:"Angle or how you'll open it",style:"margin-top:10px"}), an
+    el("label",{class:"f",for:"d"+n+"-angle",text:"What this post is about",style:"margin-top:10px"}), an
   ].concat(namedOffers().length>1 ? [
     el("div",{class:"f",text:"Which offer is today about?",style:"margin-top:12px"}),
     el("div",{class:"chips",role:"group","aria-label":"Today's offer",style:"margin-top:6px"},namedOffers().map(x=>el("button",{type:"button",class:"chip","aria-pressed":String(d.offer===x.i),text:offerLabel(x.i),onclick:()=>{ d.offer=(d.offer===x.i)?null:x.i; touch(n); renderEditor(); }}))),
@@ -1799,7 +1799,7 @@ const buildPrompt = () => {
   if(!pickedChannels().length) return "";
   const L=[];
   const named=namedOffers();
-  L.push("I want you to be my content coach for a 30 day visibility challenge. Please don't write my posts for me. Help me figure out what to talk about and how to say it, so every post sounds like me.");
+  L.push("I want you to be my content coach for a 30 day visibility challenge. Help me pick what to talk about, then write my posts for me in my own voice so all I have to do is edit and post.");
   L.push("");
   L.push("WHO I'M SPEAKING TO");
   L.push("- "+(b.client.trim()||"(not filled in yet, ask me who I'm speaking to and what they're going through)"));
@@ -1862,29 +1862,30 @@ const buildPrompt = () => {
   L.push("- Share what's inside an offer and let people ask for access. Skip 'join my community' pitches.");
   L.push("- Do not invent results, testimonials, client stories, statistics or quotes. If a post needs a real story or number, ask me for a real one.");
   if(state.design.done && state.design.open.indexOf("heart")>-1) L.push("- I have an open Heart. Never ask me to promise daily posting or a streak.");
-  L.push("- Keep your words plain and warm. No hype, no coach jargon, no cliches, no em dashes. If you give me example lines, keep them short and loose, because I'll say it in my own words.");
+  L.push("- Keep your words plain and warm. No hype, no coach jargon, no cliches, no em dashes. Write in my voice: short sentences, contractions, how I actually talk. Sound like a person, not a brand.");
   L.push("");
   L.push("HOW TO COACH ME");
-  L.push("Step 1. Ask me only what's missing above, one short question at a time: who I'm speaking to and what they're going through, how I help them, what I want to focus on, and what I'm promoting if my offer isn't listed above.");
-  L.push("Step 2. Give me 10 topic ideas, one line each. Base them on my offer, who I'm speaking to, what I told you, and what my open centers say my clients are feeling. Number them and ask me to pick the ones that light me up.");
+  L.push("Step 1. Ask me only what's missing above, one short question at a time: who I'm speaking to and what they're going through, how I help them, what I want to focus on, and what I'm promoting if my offer isn't listed above."+(state.brief.voice.trim()?"":" I haven't shared how I talk yet, so ask me to paste a few sentences I've written or said out loud before you write anything."));
+  L.push("Step 2. Give me 10 topic ideas. Each one has a short title and a 1 to 2 sentence description of what the post covers and who it's for. Base them on my offer, who I'm speaking to, what I told you, and what my open centers say my clients are feeling. Number them and ask me to pick the ones that light me up.");
   L.push(lib
     ? "Step 3. Group my picks by platform, my main platform first, thinking about the formats I use. Don't assign days. Show me the list and let me move things around."+(named.length>1?" Ask me which offer each post is about, one offer per post.":"")
     : "Step 3. Match my picks to the days in my plan, thinking about each day's format. Show me the list and let me move things around."+(named.length>1?" Ask me which offer each day is about, one offer per day.":""));
   if(lib){
-    L.push("Step 4. As soon as I confirm the list, and BEFORE we start on any post, give me my topic list as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Each post has a platform key from the list above, a short topic and an optional note with the angle or how I'll open it."+(named.length>1?" Add an offer for each post: the name of that post's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, ask me if I'm ready to start with the first topic.");
+    L.push("Step 4. Write every post in full, one after another, in my voice, for "+libName(main)+" and the formats I use. Each ends with one clear next step to that post's one offer. Keep each caption inside its limit"+capLimits()+". If a post needs a real story or number from me, ask me before you write it. Show me the posts here in the chat and ask what I want changed. If I'd rather talk a post out first, coach me: what to talk about, a story from my own life, which of my throat voices and gates fits, and how I could open it. Then I'll talk freely and you'll use my exact words.");
+    L.push("Step 5. When I'm happy with the posts, give me everything as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Each post has a platform key from the list above, a short title in \"topic\", a \"description\" of the post in 1 to 3 plain sentences, an optional \"note\" with how I open it, and the full finished post in \"caption\" exactly as I'll post it, with line breaks written as \\n."+(named.length>1?" Add an offer for each post: the name of that post's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, tell me to copy it back into my planner, or save it as a file and upload it.");
     L.push("");
-    L.push(JSON.stringify({planner:"visibility-unleashed",mode:"library",posts:[named.length>1?{platform:pickedChannels()[0],topic:"...",note:"...",offer:"..."}:{platform:pickedChannels()[0],topic:"...",note:"..."}]},null,2));
+    L.push(JSON.stringify({planner:"visibility-unleashed",mode:"library",posts:[named.length>1?{platform:pickedChannels()[0],topic:"...",description:"...",note:"...",caption:"...",offer:"..."}:{platform:pickedChannels()[0],topic:"...",description:"...",note:"...",caption:"..."}]},null,2));
     L.push("");
   } else {
-    L.push("Step 4. As soon as I confirm the list, and BEFORE we start on any post, give me my topic plan as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Use the exact day numbers from my plan. Each day has a short topic and an optional note with the angle or how I'll open it."+(named.length>1?" Add an offer for each day: the name of that day's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, ask me if I'm ready to start with the first day.");
+    L.push("Step 4. Write every post in full, one day after another, in my voice, for the platform and format of that day's main post. Each ends with one clear next step to that day's one offer. Keep each caption inside its limit"+capLimits()+". If a post needs a real story or number from me, ask me before you write it. Show me the posts here in the chat and ask what I want changed. If I'd rather talk a post out first, coach me: what to talk about, a story from my own life, which of my throat voices and gates fits, and how I could open it. Then I'll talk freely and you'll use my exact words.");
+    L.push("Step 5. When I'm happy with the posts, give me everything as ONE code block of JSON in exactly the format below, and nothing inside the block except the JSON. Use the exact day numbers from my plan. Each day has a short title in \"topic\", a \"description\" of the post in 1 to 3 plain sentences, an optional \"note\" with how I open it, and the full finished main post in \"caption\" exactly as I'll post it, with line breaks written as \\n."+(named.length>1?" Add an offer for each day: the name of that day's one offer, exactly as I wrote it above.":"")+" Plain text only. After the code block, tell me to copy it back into my planner, or save it as a file and upload it.");
     L.push("");
-    L.push(JSON.stringify({planner:"visibility-unleashed",week:w,days:[named.length>1?{day:a,topic:"...",note:"...",offer:"..."}:{day:a,topic:"...",note:"..."}]},null,2));
+    L.push(JSON.stringify({planner:"visibility-unleashed",week:w,days:[named.length>1?{day:a,topic:"...",description:"...",note:"...",caption:"...",offer:"..."}:{day:a,topic:"...",description:"...",note:"...",caption:"..."}]},null,2));
     L.push("");
   }
-  L.push("Step 5. Coach me one post at a time, starting with "+(lib?"the first topic":"the first day")+". Tell me what to talk about: the point, a story or example from my own life I could use, and what my clients are feeling. Tell me how to say it: which of my throat voices and gates fits, how I could open it, and what to avoid. Then ask me to talk it out right here in the chat, out loud with dictation or typed like a voice note, freely and with passion. Tell me not to polish it.");
-  L.push("Step 6. After I talk, show me the strongest parts back in my own words, tell me where I lit up, and tell me where the post should start and where it should end with one next step to my one offer. Only write the post for me if I ask, and when I do, use my exact words as much as you can.");
   return L.join("\n");
 };
+const capLimits = () => { const l=(state.picks||[]).filter(id=>LIMITS[id]&&id!=="youtube").map(id=>LIMITS[id].name+" "+LIMITS[id].max); return l.length?": "+l.join(", ")+" characters":""; };
 
 /* import: topics */
 const parseAI = text => {
@@ -1895,18 +1896,23 @@ const parseAI = text => {
   if(!obj){ const i=t.indexOf("{"), j=t.lastIndexOf("}"); if(i>-1&&j>i) obj=tryParse(t.slice(i,j+1)); }
   return (obj&&typeof obj==="object"&&(Array.isArray(obj.days)||Array.isArray(obj.posts))) ? obj : null;
 };
+/* description = what the post covers; note = how to open it. Stored together in the post's angle. */
+const mergeDesc = (row,str) => {
+  const d=str(row.description||row.desc,1200), o=str(row.note,500);
+  return d ? (o ? d+"\n\nHow to open it: "+o : d) : o;
+};
 const cleanTopics = obj => {
   const str=(v,max)=>(typeof v==="string"||typeof v==="number") ? String(v).replace(/\r\n/g,"\n").trim().slice(0,max) : "";
   const items=[], warns=[];
   obj.days.forEach(row=>{
     const n=Number(row&&row.day);
     if(!Number.isInteger(n)||n<1||n>DAYS){ warns.push("Skipped a day with a number I couldn't read."); return; }
-    const topic=str(row.topic,300), note=str(row.note,1500);
+    const topic=str(row.topic,300), note=mergeDesc(row,str), caption=str(row.caption,5000);
     if(!topic&&!note){ warns.push("Day "+n+" had no topic."); return; }
     const raw=str(row.offer,80);
     const offer=resolveOffer(raw);
     if(raw && offer==null && namedOffers().length>1) warns.push("Day "+n+": I couldn't match the offer '"+raw.slice(0,40)+"'. Pick it in the planner.");
-    items.push({n:n,topic:topic,note:note,offer:offer});
+    items.push({n:n,topic:topic,note:note,caption:caption,offer:offer});
   });
   items.sort((x,y)=>x.n-y.n);
   return {items:items,warns:warns};
@@ -1932,6 +1938,7 @@ const ideasBlock = (n,d) => {
         el("button",{type:"button",class:"btn main",text:"Use this one",onclick:()=>{
           const prev={topic:d.topic||"",note:d.angle||"",offer:(d.offer===0||d.offer===1)?d.offer:null};
           d.topic=idea.topic||""; d.angle=idea.note||"";
+          if(idea.caption){ const mk=mainKey(d); if(mk){ const c=getCh(d,mk); prev.caption=c.caption||""; c.caption=idea.caption; } }
           if(idea.offer===0||idea.offer===1) d.offer=idea.offer;
           if(prev.topic.trim()||prev.note.trim()) d.moreTopics[i]=prev; else d.moreTopics.splice(i,1);
           touch(n); renderEditor();
@@ -1954,6 +1961,7 @@ const topicStatus = (it,allowMulti) => {
   if(d && ((d.topic&&d.topic.trim())||(d.angle&&d.angle.trim()))) return ((d.moreTopics||[]).length>=10) ? "skip" : "more";
   return "add";
 };
+const mainKey = d => (d.active||[]).find(k=>k!=="stories"&&k!=="email"&&k!=="video") || (d.active||[])[0] || null;
 const applyTopics = (items,allowMulti) => {
   let count=0, first=null;
   items.forEach(it=>{
@@ -1962,9 +1970,10 @@ const applyTopics = (items,allowMulti) => {
     const d=getDay(it.n);
     if(st==="more"){
       if(!Array.isArray(d.moreTopics)) d.moreTopics=[];
-      d.moreTopics.push({topic:it.topic,note:it.note,offer:(it.offer===0||it.offer===1)?it.offer:null});
+      d.moreTopics.push({topic:it.topic,note:it.note,caption:it.caption||"",offer:(it.offer===0||it.offer===1)?it.offer:null});
     } else {
       d.topic=it.topic; d.angle=it.note;
+      if(it.caption){ const mk=mainKey(d); if(mk){ const c=getCh(d,mk); if(!(c.caption||"").trim()) c.caption=it.caption; } }
       if((it.offer===0||it.offer===1) && !(d.offer===0||d.offer===1)) d.offer=it.offer;
     }
     touch(it.n);
@@ -1985,11 +1994,11 @@ const cleanPosts = obj => {
       if(hit) k=hit;
       else { if(k) warns.push("Post "+(i+1)+": I didn't know the platform '"+k.slice(0,30)+"', so I put it under "+libName(main)+"."); k=main; }
     }
-    const topic=str(row&&row.topic,300), note=str(row&&row.note,1500);
+    const topic=str(row&&row.topic,300), note=mergeDesc(row||{},str), caption=str(row&&row.caption,5000);
     if(!topic&&!note){ warns.push("Post "+(i+1)+" had no topic."); return; }
     const raw=str(row&&row.offer,80), offer=resolveOffer(raw);
     if(raw && offer==null && namedOffers().length>1) warns.push("Post "+(i+1)+": I couldn't match the offer '"+raw.slice(0,40)+"'. Pick it in the library.");
-    items.push({k:k,topic:topic,note:note,offer:offer});
+    items.push({k:k,topic:topic,note:note,caption:caption,offer:offer});
   });
   return {items:items,warns:warns};
 };
@@ -2005,7 +2014,7 @@ const applyLibPosts = (items,allowMulti) => {
   items.forEach(it=>{
     if(libStatus(it,allowMulti)!=="add") return;
     if(libTooBig()){ full=true; return; }
-    const np=newPost(it.k,{name:it.topic||it.note,angle:it.topic?it.note:"",offer:(it.offer===0||it.offer===1)?it.offer:(namedOffers().length===1?namedOffers()[0].i:null)});
+    const np=newPost(it.k,{name:it.topic||it.note,angle:it.topic?it.note:"",caption:it.caption||"",offer:(it.offer===0||it.offer===1)?it.offer:(namedOffers().length===1?namedOffers()[0].i:null)});
     libAutoLink(np); libList(it.k).unshift(np);
     count++; if(first==null) first=it.k;
   });
@@ -2168,8 +2177,8 @@ const renderWrite = () => {
   box.appendChild(el("div",{class:"pick-intro"},[
     el("h2",{text:"Write my week"}),
     el("p",{text:lib
-      ? "Answer a few questions and copy your prompt into ChatGPT or Claude. Your coach helps you find topics and talk them out, one post at a time, so it still sounds like you. Then bring your topics back and they land in your library, ready to write when you feel inspired."
-      : "Answer a few questions and copy your prompt into ChatGPT or Claude. Your coach helps you pick topics and talk them out, one post at a time, so it still sounds like you. Then bring your topics back and they land in your days."})
+      ? "Answer a few questions and copy your prompt into ChatGPT or Claude. Your coach gives you topic ideas to choose from, each with a description, then writes your posts in your voice. Bring it all back and your titles, descriptions and posts land in your library, ready to edit."
+      : "Answer a few questions and copy your prompt into ChatGPT or Claude. Your coach gives you topic ideas to choose from, each with a description, then writes your posts in your voice. Bring it all back and your titles, descriptions and posts land in your days, ready to edit."})
   ]));
   box.appendChild(modeToggleNode(()=>renderWrite()));
   const card=(title,hint,kids)=>el("section",{class:"pcard","aria-label":title},[
@@ -2250,7 +2259,7 @@ const renderWrite = () => {
       const tag={add:"Adds",replace:"Replaces",more:"Adds as another idea for this day",skip:lib?"Skipped, it's already in your library":"Skipped, it's already on this day",done:"Skipped, this day is done",multi:"Skipped, it mentions your other offer"}[st];
       const oi2=(it.offer===0||it.offer===1)?it.offer:null;
       const head=lib ? libName(it.k) : "Day "+it.n+", "+longDate(it.n);
-      return el("div",{class:"vcard"},[el("div",{class:"wtitle",text:head}), el("p",{style:"margin:6px 0 0"},[el("strong",{text:snippet(it.topic||it.note)}),el("span",{class:"hint",text:"  "+tag+"."})]), (oi2!=null&&namedOffers().length>1)?el("div",{class:"hint",text:"Offer: "+offerLabel(oi2)}):null]);
+      return el("div",{class:"vcard"},[el("div",{class:"wtitle",text:head}), el("p",{style:"margin:6px 0 0"},[el("strong",{text:snippet(it.topic||it.note)}),el("span",{class:"hint",text:"  "+tag+"."})]), (it.caption)?el("div",{class:"hint",text:"Includes the written post ("+it.caption.length+" characters)."}):null, (it.topic&&it.note)?el("div",{class:"hint",text:it.note.length>220?it.note.slice(0,220)+"...":it.note,style:"white-space:pre-line"}):null, (oi2!=null&&namedOffers().length>1)?el("div",{class:"hint",text:"Offer: "+offerLabel(oi2)}):null]);
     });
     const use=counts.add+counts.replace+counts.more, skipped=counts.skip+counts.done+counts.multi;
     previewBox.appendChild(el("p",{text:U.items.length+(lib?" post":" day")+(U.items.length===1?"":"s")+" found. "+use+" topic"+(use===1?"":"s")+" will be added"+(skipped?", "+skipped+" skipped.":"."),style:"margin:14px 0 8px;font-weight:600"}));
@@ -2288,8 +2297,8 @@ const renderWrite = () => {
     r.readAsText(f);
   });
   box.appendChild(card((++sn)+". Bring your topics back",lib
-    ? "When you've picked your topics, ask your coach for the topic list. Paste it here or upload it, and you'll see a preview before anything changes. Each topic lands in the right platform tab of your library. You write the posts yourself, or with your coach, one at a time."
-    : "When you've picked your topics, ask your coach for the topic plan. Paste it here or upload it, and you'll see a preview before anything changes. Each day gets its topic at the top. You write the posts yourself, or with your coach, one at a time.",[
+    ? "When you're happy with your posts, your coach gives you one code block. Paste it here or upload it, and you'll see a preview before anything changes. Each post lands in the right platform tab of your library, caption included."
+    : "When you're happy with your posts, your coach gives you one code block. Paste it here or upload it, and you'll see a preview before anything changes. Each day gets its topic, description and caption. Anything you've already written stays as it is.",[
     imp,
     el("div",{class:"pact"},[el("button",{type:"button",class:"btn main",text:"Check it",onclick:check}), el("label",{class:"btn",for:"wr-file",text:"Upload a file"})]),
     el("div",{style:"position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"},[fileInp]),
@@ -2459,7 +2468,7 @@ const libCard = (k,p) => {
   const refresh=()=>{ titleEl.textContent=postTitle(p); };
   const card=el("section",{class:"pcard libpost","aria-label":postTitle(p)},[
     titleEl,
-    (p.angle&&p.angle.trim())?el("div",{class:"hint",text:p.angle.trim()}):null,
+    (p.angle&&p.angle.trim())?el("div",{class:"hint",text:p.angle.trim(),style:"white-space:pre-line"}):null,
     el("div",{class:"hint",text:bits.join(", ")}),
     el("div",{class:"pact"},[
       el("button",{type:"button",class:"btn","aria-expanded":String(isOpen),text:isOpen?"Close":"Edit",onclick:()=>{ libUI.open[p.id]=!isOpen; renderLibrary(); }}),
