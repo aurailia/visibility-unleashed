@@ -2487,6 +2487,7 @@ const libCard = (k,p) => {
         : used
         ? el("button",{type:"button",class:"btn",text:"Use again",onclick:()=>{ p.status="ready"; p.usedAt=null; touch("lib"); renderLibrary(); }})
         : el("button",{type:"button",class:"btn main",text:"Mark as used",onclick:()=>{ p.status="used"; p.usedAt=Date.now(); touch("lib"); toast("Marked as used."); renderLibrary(); }}),
+      (p.status!=="pending") ? el("button",{type:"button",class:"btn",text:"Move to pending",onclick:()=>{ p.status="pending"; p.usedAt=null; touch("lib"); toast("Moved to pending."); renderLibrary(); }}) : null,
       el("button",{type:"button",class:"btn",text:libUI.armed===p.id?"Tap again to delete":"Delete",onclick:()=>{
         if(libUI.armed!==p.id){ libUI.armed=p.id; renderLibrary(); setTimeout(()=>{ if(libUI.armed===p.id){ libUI.armed=null; if(view==="plan"&&state.mode==="library"&&libUI.page==="library") renderLibrary(); } },3500); return; }
         libUI.armed=null; const l=libList(k); l.splice(l.indexOf(p),1); touch("lib"); toast("Post deleted."); renderLibrary();
