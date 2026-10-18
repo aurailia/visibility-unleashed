@@ -1867,7 +1867,9 @@ const buildPrompt = () => {
   L.push("");
   L.push("HOW TO COACH ME");
   L.push("Step 1. Ask me only what's missing above, one short question at a time: who I'm speaking to and what they're going through, how I help them, what I want to focus on, and what I'm promoting if my offer isn't listed above."+(state.brief.voice.trim()?"":" I haven't shared how I talk yet, so ask me to paste a few sentences I've written or said out loud before you write anything."));
-  L.push("Step 2. Give me 10 topic ideas. Each one has a short title and a 1 to 2 sentence description of what the post covers and who it's for. Base them on my offer, who I'm speaking to, what I told you, and what my open centers say my clients are feeling. Number them and ask me to pick the ones that light me up.");
+  L.push(state.design.done
+    ? "Step 2. Give me 10 topic ideas. Base them on my offer, who I'm speaking to, what I told you, and my Human Design above. Number them. For each topic give me: (1) A short title. (2) The theme: 1 to 2 sentences on what the post covers and who it's for. (3) Why she'll feel seen: name which of my open centers this topic comes from and what my client is feeling because of it, in plain words. Don't talk about my client's Human Design, since I may not know it. (4) Your design: 1 to 3 sentences on why this topic fits MY design. Point to the specific part of my chart (my type, authority, a profile line, a throat channel, a throat gate, or an open center), which of my throat voices or gates to post it from, and one opening line in that voice. Keep the Human Design plain and practical, as if explaining it to someone new to it, and explain any Human Design word you use. Then ask me to pick the ones that light me up."
+    : "Step 2. Give me 10 topic ideas. Each one has a short title and a 1 to 2 sentence description of what the post covers and who it's for. Base them on my offer, who I'm speaking to and what I told you. Number them and ask me to pick the ones that light me up.");
   L.push(lib
     ? "Step 3. Group my picks by platform, my main platform first, thinking about the formats I use. Don't assign days. Show me the list and let me move things around."+(named.length>1?" Ask me which offer each post is about, one offer per post.":"")
     : "Step 3. Match my picks to the days in my plan, thinking about each day's format. Show me the list and let me move things around."+(named.length>1?" Ask me which offer each day is about, one offer per day.":""));
@@ -2186,8 +2188,8 @@ const renderWrite = () => {
   box.appendChild(el("div",{class:"pick-intro"},[
     el("h2",{text:"Write my week"}),
     el("p",{text:lib
-      ? "Answer a few questions and copy your prompt into ChatGPT or Claude. Your coach gives you topic ideas to choose from, each with a description, then writes your posts in your voice. Bring it all back and your titles, descriptions and posts land in your library, ready to edit."
-      : "Answer a few questions and copy your prompt into ChatGPT or Claude. Your coach gives you topic ideas to choose from, each with a description, then writes your posts in your voice. Bring it all back and your titles, descriptions and posts land in your days, ready to edit."})
+      ? "Answer a few questions and copy your prompt into ChatGPT or Claude. Your coach gives you topic ideas to choose from, each with a description and how it fits your Human Design, then writes your posts in your voice. Bring it all back and your titles, descriptions and posts land in your library, ready to edit."
+      : "Answer a few questions and copy your prompt into ChatGPT or Claude. Your coach gives you topic ideas to choose from, each with a description and how it fits your Human Design, then writes your posts in your voice. Bring it all back and your titles, descriptions and posts land in your days, ready to edit."})
   ]));
   box.appendChild(modeToggleNode(()=>renderWrite()));
   const card=(title,hint,kids)=>el("section",{class:"pcard","aria-label":title},[
